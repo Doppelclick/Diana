@@ -2,12 +2,11 @@ package com.Diana.mod.commands;
 
 import com.Diana.mod.Diana;
 import com.Diana.mod.config.config;
-import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.EnumChatFormatting;
 import java.util.List;
 
 public class DianaCommand extends CommandBase {
@@ -16,6 +15,7 @@ public class DianaCommand extends CommandBase {
             + " /diana toggle | Toggle the mod\n"
             + " /diana guess | Toggle burrow guess\n"
             + " /diana proximity | Toggle burrow\n"
+            + " /diana messages | Toggle messages\n"
             + " /diana beacon [help, block, beam, text]";
 
     static String beaconHelp = "§3Diana Solver §r beacon options\n"
@@ -36,9 +36,8 @@ public class DianaCommand extends CommandBase {
     public int getRequiredPermissionLevel() {
         return 0;
     }
-
-
-    public List<String> addTabCompletionOptions(ICommandSender sender, String[] strings) {
+    @Override
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] strings, BlockPos pos) {
         if (strings.length == 1) {
             return getListOfStringsMatchingLastWord(strings, "help", "toggle", "guess", "proximity", "beacon");
         }
@@ -47,29 +46,35 @@ public class DianaCommand extends CommandBase {
         }
         return null;
     }
-
     @Override
     public void processCommand(ICommandSender sender, String[] strings) {
-        Minecraft mc = Minecraft.getMinecraft();
         EntityPlayer player = (EntityPlayer) sender;
         if (strings.length < 1) {
-            player.addChatMessage(new ChatComponentText(EnumChatFormatting.GREEN
-                            + "[ZT] For available commands use \"/zt help\"."));
+            player.addChatMessage(new ChatComponentText("§3[Diana] §rFor available commands use \"/zt help\"."));
         } else {
             switch (strings[0].toLowerCase()) {
                 case "toggle":
                     Diana.toggle=!Diana.toggle;
+                    Diana.mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rToggled mod " + config.understandMe(Diana.toggle)));
                     config.writeBooleanConfig("toggles", "ModToggle", Diana.toggle);
                     break;
 
                 case "guess":
                     Diana.guess=!Diana.guess;
+                    Diana.mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rToggled burrow guess " + config.understandMe(Diana.guess)));
                     config.writeBooleanConfig("toggles", "GuessBurrow", Diana.guess);
                     break;
 
                 case "proximity":
                     Diana.proximity=!Diana.proximity;
+                    Diana.mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rToggled burrow proximity finder " + config.understandMe(Diana.proximity)));
                     config.writeBooleanConfig("toggles", "BurrowProximity", Diana.proximity);
+                    break;
+
+                case "messages":
+                    Diana.messages=!Diana.messages;
+                    Diana.mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rToggled messages " + config.understandMe(Diana.messages)));
+                    config.writeBooleanConfig("toggles", "Messages", Diana.messages);
                     break;
 
                 case "beacon":
@@ -77,16 +82,19 @@ public class DianaCommand extends CommandBase {
                         switch (strings[1].toLowerCase()) {
                             case "block":
                                 Diana.block=!Diana.block;
+                                Diana.mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rToggled beacon block " + config.understandMe(Diana.block)));
                                 config.writeBooleanConfig("toggles", "BeaconBlock", Diana.block);
                                 break;
 
                             case "beam":
                                 Diana.beam=!Diana.beam;
+                                Diana.mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rToggled beacon beam " + config.understandMe(Diana.beam)));
                                 config.writeBooleanConfig("toggles", "BeaconBeam", Diana.beam);
                                 break;
 
                             case "text":
                                 Diana.text=!Diana.text;
+                                Diana.mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rToggled beacon text " + config.understandMe(Diana.text)));
                                 config.writeBooleanConfig("toggles", "BeaconText", Diana.text);
                                 break;
 
@@ -100,7 +108,7 @@ public class DianaCommand extends CommandBase {
                     break;
 
                 default:
-                    mc.thePlayer.addChatMessage(new ChatComponentText(help));
+                    Diana.mc.thePlayer.addChatMessage(new ChatComponentText(help));
             }
         }
     }
