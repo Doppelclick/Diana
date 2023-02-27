@@ -42,7 +42,7 @@ import java.util.List;
 @Mod(modid = Diana.Name, version = Diana.V)
 public class Diana {
     public static final String Name = "Diana";
-    public static final String V = "0.1";
+    public static final String V = "0.1.1";
     public static boolean toggle = false;
     public static boolean guess = false;
     public static boolean proximity = false;
@@ -55,9 +55,9 @@ public class Diana {
     static boolean echo = false;
     static float lastpitch = 0;
     static List<Float> pitch = new ArrayList<>();
-    static BlockPos playerp = new BlockPos(0,0,0);
-    static List<BlockPos> sounds = new ArrayList<>();
-    static List<BlockPos> particles = new ArrayList<>();
+    static Vec3 playerp = new Vec3(0,0,0);
+    static List<Vec3> sounds = new ArrayList<>();
+    static List<Vec3> particles = new ArrayList<>();
     static long clicked = 0;
     static BlockPos burrow = new BlockPos(0,0,0);
 
@@ -65,7 +65,6 @@ public class Diana {
     @Mod.EventHandler
     void preInit(final FMLPreInitializationEvent event) {
         ClientCommandHandler.instance.registerCommand(new DianaCommand());
-        //configDir = event.getModConfigurationDirectory().toString();
     }
 
     @Mod.EventHandler
@@ -115,13 +114,13 @@ public class Diana {
         if (!toggle) return;
         if (event.action == PlayerInteractEvent.Action.RIGHT_CLICK_AIR && guess) {
             EntityPlayerSP player = mc.thePlayer;
-            if (player!=null && System.currentTimeMillis()>clicked + 2000) {
+            if (player!=null && System.currentTimeMillis() > clicked + 2000) {
                 if (player.getHeldItem() != null) {
                     if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
                         resetData();
                         echo = true;
                         clicked = System.currentTimeMillis();
-                        playerp = new BlockPos(player.getPositionVector().xCoord, player.getPositionVector().yCoord+1, player.getPositionVector().zCoord);
+                        playerp = player.getPositionVector().addVector(0,1,0);
                     }
                 }
             }
@@ -153,7 +152,7 @@ public class Diana {
         if (event.name.equals("note.harp") && guess && echo) {
             if (lastpitch!=0) pitch.add(event.sound.getPitch()-lastpitch);
             lastpitch=event.sound.getPitch();
-            sounds.add(new BlockPos(event.sound.getXPosF() - playerp.getX(), event.sound.getYPosF() - playerp.getY(), event.sound.getZPosF() - playerp.getZ()));
+            sounds.add(new Vec3(event.sound.getXPosF() - playerp.xCoord, event.sound.getYPosF() - playerp.yCoord, event.sound.getZPosF() - playerp.zCoord));
         }
     }
 
@@ -164,32 +163,49 @@ public class Diana {
             if (event.packet instanceof S2APacketParticles) {
                 S2APacketParticles particle = (S2APacketParticles) event.packet;
                 if (particle.getParticleType() == EnumParticleTypes.FIREWORKS_SPARK && particle.getParticleSpeed() == 0) {
-                    particles.add(new BlockPos(particle.getXCoordinate() - playerp.getX(), particle.getYCoordinate() - playerp.getY(), particle.getZCoordinate() - playerp.getZ()));
+                    particles.add(new Vec3(particle.getXCoordinate() - playerp.xCoord, particle.getYCoordinate() - playerp.yCoord, particle.getZCoordinate() - playerp.zCoord));
                 }
             }
         }
     }
 
     void calcBurrow() {
-        if (pitch.size()<2 || particles.size()<2) return;
+        if (pitch.size()<6 || particles.size()<6) return;
         float all = 0;
         for (float i : pitch) all+=i;
         all /= pitch.size();
-        Vec3 last = new Vec3(0,0,0);
-        if (particles.size()>sounds.size()) last = new Vec3(particles.get(particles.size()-1));
-        else if (particles.size()<sounds.size()) last = new Vec3(sounds.get(sounds.size()-1));
-        else {
-            BlockPos a = particles.get(particles.size()-1);
-            BlockPos b = sounds.get(sounds.size()-1);
-            last = new Vec3(((float) a.getX()+b.getX())/2, ((float) a.getX()+b.getX())/2, ((float) a.getX()+b.getX())/2);
+
+        Vec3 sound = new Vec3(0,0,0);
+        for (int i = 5; i < sounds.size(); i++) {
+            sound.add(sounds.get(i));
         }
+        double xs = sound.xCoord / (sounds.size() - 5);
+        double ys = sound.yCoord / (sounds.size() - 5);
+        double zs = sound.zCoord / (sounds.size() - 5);
+        sound = new Vec3(xs, ys, zs);
+
+        Vec3 particle = new Vec3(0,0,0);
+        for (int i = 5; i < particles.size(); i++) {
+            particle.add(particles.get(i));
+        }
+        double xp = particle.xCoord / (particles.size() - 5);
+        double yp = particle.yCoord / (particles.size() - 5);
+        double zp = particle.zCoord / (particles.size() - 5);
+        particle = new Vec3(xp, yp, zp);
+
+        Vec3 last = particle.add(sound);
+        double xl = last.xCoord / 2;
+        double yl = last.yCoord / 2;
+        double zl = last.zCoord / 2;
+        last = new Vec3(xl, yl, zl);
+
         double x = last.xCoord;
         double y = last.yCoord;
         double z = last.zCoord;
         double d = x*x + y*y + z*z;
         double dist = Math.E/all - Math.cbrt(d);
         double factor = Math.sqrt(d) / dist;
-        burrow = playerp.add(x/factor, y/factor, z/factor);
+        burrow = new BlockPos(playerp.add(new Vec3(x/factor, y/factor, z/factor)));
         if (messages) mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §r[" + burrow.getX() + "," + burrow.getY() + "," + burrow.getZ() + "] " + (int)Math.round(dist)));
     }
 
@@ -234,9 +250,10 @@ public class Diana {
         burrow = new BlockPos(0,0,0);
         lastpitch = 0;
         pitch = new ArrayList<>();
+        sounds = new ArrayList<>();
         particles = new ArrayList<>();
         clicked = 0;
-        playerp = new BlockPos(0,0,0);
+        playerp = new Vec3(0,0,0);
     }
 
     @SubscribeEvent
