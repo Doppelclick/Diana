@@ -2,7 +2,7 @@
 
 <p align="left">
   <a href="https://github.com/Doppelclick/Diana/releases/latest" target="_blank">
-    <img alt="version" src="https://img.shields.io/github/v/release/Doppelclick/Diana?color=%239f00ff&style=for-the-badge" />
+    <img alt="version" src="https://img.shields.io/github/release/Doppelclick/Diana?color=%239f00ff&style=for-the-badge" />
   </a>
   <a href="https://github.com/Doppelclick/Diana/releases/latest" target="_blank">
     <img alt="downloads" src="https://img.shields.io/github/downloads/Doppelclick/Diana/total?color=%239f00ff&style=for-the-badge" />
