@@ -175,7 +175,7 @@ public class WaypointUtils {
      * https://github.com/Moulberry/NotEnoughUpdates/blob/master/LICENSE
      * @author Moulberry
      */
-    public static void renderWaypointText(String str, BlockPos loc, float partialTicks) {
+    public static void renderWaypointText(String str, Vec3 loc, float partialTicks) {
         GlStateManager.alphaFunc(516, 0.1F);
 
         GlStateManager.pushMatrix();
@@ -185,9 +185,9 @@ public class WaypointUtils {
         double viewerY = viewer.lastTickPosY + (viewer.posY - viewer.lastTickPosY) * partialTicks;
         double viewerZ = viewer.lastTickPosZ + (viewer.posZ - viewer.lastTickPosZ) * partialTicks;
 
-        double x = loc.getX() + 0.5 - viewerX;
-        double y = loc.getY() - viewerY - viewer.getEyeHeight();
-        double z = loc.getZ() + 0.5 - viewerZ;
+        double x = loc.xCoord + 0.5 - viewerX;
+        double y = loc.yCoord - viewerY - viewer.getEyeHeight();
+        double z = loc.zCoord + 0.5 - viewerZ;
 
         double distSq = x*x + y*y + z*z;
         double dist = Math.sqrt(distSq);
