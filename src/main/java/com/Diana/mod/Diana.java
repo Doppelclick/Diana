@@ -41,7 +41,7 @@ import java.util.List;
 @Mod(modid = Diana.Name, version = Diana.V)
 public class Diana {
     public static final String Name = "Diana";
-    public static final String V = "0.1.1";
+    public static final String V = "0.1.2";
     public static boolean toggle = false;
     public static boolean guess = false;
     public static boolean proximity = false;
