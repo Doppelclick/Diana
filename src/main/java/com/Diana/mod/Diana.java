@@ -98,7 +98,7 @@ public class Diana {
                         String releaseURL = "https://github.com/Doppelclick/Diana/releases/latest";
                         ChatComponentText update = new ChatComponentText("§l§2  [UPDATE]  ");
                         update.setChatStyle(update.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, releaseURL)));
-                        mc.thePlayer.addChatMessage(new ChatComponentText("$cDiana Solver is outdated. Please update to " + latestTag + ".\n").appendSibling(update));
+                        mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana]§c Solver is outdated. Please update to " + latestTag + ".\n").appendSibling(update));
                     }
                 } catch (Exception e) {
                     mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §cAn error has occurred connecting to github"));
