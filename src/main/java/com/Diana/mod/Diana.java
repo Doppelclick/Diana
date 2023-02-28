@@ -169,7 +169,7 @@ public class Diana {
     }
 
     void calcBurrow() {
-        if (pitch.size()<6 || particles.size()<6) return;
+        if (pitch.size()<3 || particles.size()<3 || sounds.size()<3) return;
 
         float all = 0;
         for (int i = 1; i < pitch.size(); i++) {
@@ -177,47 +177,25 @@ public class Diana {
         }
         all /= pitch.size() - 1;
 
-        Vec3 first = new Vec3(playerp.xCoord, particles.get(4).yCoord, playerp.zCoord);
+        Vec3 first = particles.get(0);
+        Vec3 last2 = particles.get(particles.size()-2);
+        Vec3 last = particles.get(particles.size()-1);
+        Vec3 lastsound = sounds.get(sounds.size()-1);
 
-        //Vec3 firsts = new Vec3(sounds.get(0).xCoord, sounds.get(4).yCoord, sounds.get(0).zCoord);
-        //Vec3 firstp = new Vec3(particles.get(0).xCoord, particles.get(4).yCoord, particles.get(0).zCoord);
-        //double xf = (firsts.xCoord + firstp.xCoord) / 2;
-        //double yf = (firsts.xCoord + firstp.xCoord) / 2;
-        //double zf = (firsts.xCoord + firstp.xCoord) / 2;
-        //Vec3 first = new Vec3(xf,yf,zf);
+        double lineDist = Math.sqrt(total(last2.subtract(last)));
+        double distance = (Math.E / all - Math.sqrt(total(first.subtract(lastsound))));
+        Vec3 changes = last.subtract(last2);
+        changes = new Vec3(changes.xCoord/lineDist, changes.yCoord/lineDist, changes.zCoord/lineDist);
+        burrow = new Vec3(lastsound.xCoord + changes.xCoord * distance, lastsound.yCoord + changes.yCoord * distance, lastsound.zCoord + changes.zCoord * distance);
 
-        //Vec3 sound = new Vec3(0,0,0);
-        //for (int i = 5; i < sounds.size(); i++) {
-        //    sound = sound.add(sounds.get(i));
-        //}
-        //int sSize = sounds.size() - 5;
-        //sound.subtract(firsts.xCoord * sSize, firsts.yCoord * sSize, firsts.zCoord * sSize);
-        //sound = new Vec3(sound.xCoord / sSize, sound.yCoord / sSize, sound.zCoord / sSize);
+        if (messages &! echo) mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §r[" + Math.round(burrow.xCoord) + "," + Math.round(burrow.yCoord) + "," + Math.round(burrow.zCoord) + "] " + (int)Math.round(distance)));
+    }
 
-        //Vec3 particle = new Vec3(0,0,0);
-        //for (int i = 5; i < particles.size(); i++) {
-        //    particle = particle.add(particles.get(i));
-        //}
-        //int pSize = particles.size() - 5;
-        //particle.subtract(firstp.xCoord * pSize, firstp.yCoord * pSize, firstp.zCoord * pSize);
-        //particle = new Vec3(particle.xCoord / pSize, particle.yCoord / pSize, particle.zCoord / pSize);
-
-        //Vec3 avg = particle.add(sound);
-        //avg = new Vec3(avg.xCoord / 2, avg.yCoord / 2, avg.zCoord / 2);
-        //double x = avg.xCoord;
-        //double y = avg.yCoord;
-        //double z = avg.zCoord;
-
-        double x = particles.get(particles.size()-1).xCoord-first.xCoord;
-        double y = particles.get(particles.size()-1).yCoord-first.yCoord;
-        double z = particles.get(particles.size()-1).zCoord-first.zCoord;
-
-        double d = x * x + y * y + z * z;
-        double dist = Math.E / all - Math.cbrt(d);
-        double factor = Math.sqrt(d) / dist;
-
-        burrow = first.addVector(x / factor, y / factor, z / factor);
-        if (messages &! echo) mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §r[" + Math.round(burrow.xCoord) + "," + Math.round(burrow.yCoord) + "," + Math.round(burrow.zCoord) + "] " + (int)Math.round(dist)));
+    double total(Vec3 v) {
+        return total(v.xCoord, v.yCoord, v.zCoord);
+    }
+    double total(double x, double y, double z) {
+        return x * x + y * y + z * z;
     }
 
     /**
