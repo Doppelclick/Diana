@@ -138,7 +138,7 @@ public class Diana {
     @SubscribeEvent
     void playerUpdate(LivingEvent.LivingUpdateEvent event) {
         if (!toggle) return;
-        if (event.entity.equals(mc.thePlayer) && burrow!=null && guess) {
+        if (event.entity.equals(mc.thePlayer) && burrow != null && guess) {
             if (event.entity.getDistanceSq(new BlockPos(burrow)) < 15) resetData();
         }
     }
@@ -167,49 +167,55 @@ public class Diana {
     }
 
     void calcBurrow() {
-        if (pitch.size()<2 || particles.size()<2) return;
+        if (pitch.size()<6 || particles.size()<6) return;
 
         float all = 0;
         for (int i = 1; i < pitch.size(); i++) {
-            all+=(pitch.get(i)-pitch.get(i-1));
+            all+=(pitch.get(i)-pitch.get(i - 1));
         }
         all /= pitch.size() - 1;
 
-        Vec3 firsts = sounds.get(0);
-        Vec3 firstp = particles.get(0);
-        double xf = (firsts.xCoord + firstp.xCoord) / 2;
-        double yf = (firsts.xCoord + firstp.xCoord) / 2;
-        double zf = (firsts.xCoord + firstp.xCoord) / 2;
-        Vec3 first = new Vec3(xf,yf,zf);
+        Vec3 first = new Vec3(particles.get(0).xCoord, particles.get(4).yCoord, particles.get(0).zCoord);
 
-        Vec3 sound = new Vec3(0,0,0);
-        for (int i = 1; i < sounds.size(); i++) {
-            sound.add(sounds.get(i));
-        }
-        int sSize = sounds.size() - 1;
-        sound.addVector(-firsts.xCoord * sSize, -firsts.yCoord * sSize, -firsts.zCoord * sSize);
-        sound = new Vec3(sound.xCoord / sSize, sound.yCoord / sSize, sound.zCoord / sSize);
+        //Vec3 firsts = new Vec3(sounds.get(0).xCoord, sounds.get(4).yCoord, sounds.get(0).zCoord);
+        //Vec3 firstp = new Vec3(particles.get(0).xCoord, particles.get(4).yCoord, particles.get(0).zCoord);
+        //double xf = (firsts.xCoord + firstp.xCoord) / 2;
+        //double yf = (firsts.xCoord + firstp.xCoord) / 2;
+        //double zf = (firsts.xCoord + firstp.xCoord) / 2;
+        //Vec3 first = new Vec3(xf,yf,zf);
 
-        Vec3 particle = new Vec3(0,0,0);
-        for (int i = 1; i < particles.size(); i++) {
-            particle.add(particles.get(i));
-        }
-        int pSize = particles.size() - 1;
-        particle.addVector(-firstp.xCoord * pSize, -firstp.yCoord * pSize, -firstp.zCoord * pSize);
-        particle = new Vec3(particle.xCoord / pSize, particle.yCoord / pSize, particle.zCoord / pSize);
+        //Vec3 sound = new Vec3(0,0,0);
+        //for (int i = 5; i < sounds.size(); i++) {
+        //    sound = sound.add(sounds.get(i));
+        //}
+        //int sSize = sounds.size() - 5;
+        //sound.subtract(firsts.xCoord * sSize, firsts.yCoord * sSize, firsts.zCoord * sSize);
+        //sound = new Vec3(sound.xCoord / sSize, sound.yCoord / sSize, sound.zCoord / sSize);
 
-        Vec3 avg = particle.add(sound);
-        avg = new Vec3(avg.xCoord / 2, avg.yCoord / 2, avg.zCoord / 2);
+        //Vec3 particle = new Vec3(0,0,0);
+        //for (int i = 5; i < particles.size(); i++) {
+        //    particle = particle.add(particles.get(i));
+        //}
+        //int pSize = particles.size() - 5;
+        //particle.subtract(firstp.xCoord * pSize, firstp.yCoord * pSize, firstp.zCoord * pSize);
+        //particle = new Vec3(particle.xCoord / pSize, particle.yCoord / pSize, particle.zCoord / pSize);
 
-        double x = avg.xCoord;
-        double y = avg.yCoord;
-        double z = avg.zCoord;
+        //Vec3 avg = particle.add(sound);
+        //avg = new Vec3(avg.xCoord / 2, avg.yCoord / 2, avg.zCoord / 2);
+        //double x = avg.xCoord;
+        //double y = avg.yCoord;
+        //double z = avg.zCoord;
+
+        double x = particles.get(particles.size()-1).xCoord-first.xCoord;
+        double y = particles.get(particles.size()-1).yCoord-first.yCoord;
+        double z = particles.get(particles.size()-1).zCoord-first.zCoord;
+
         double d = x * x + y * y + z * z;
-        double dist = Math.E/all - Math.cbrt(d);
+        double dist = Math.E / all - Math.cbrt(d);
         double factor = Math.sqrt(d) / dist;
 
         burrow = first.addVector(x / factor, y / factor, z / factor);
-        if (messages &! echo) mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §r[" + burrow.xCoord + "," + burrow.yCoord + "," + burrow.zCoord + "] " + (int)Math.round(dist)));
+        if (messages &! echo) mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §r[" + Math.round(burrow.xCoord) + "," + Math.round(burrow.yCoord) + "," + Math.round(burrow.zCoord) + "] " + (int)Math.round(dist)));
     }
 
     /**
@@ -222,7 +228,7 @@ public class Diana {
         if (!toggle || (!block &! beam &! text)) return;
         EntityPlayerSP player = mc.thePlayer;
         if (player==null) return;
-        if (guess && burrow!=null) {
+        if (guess && burrow != null) {
             Entity viewer = mc.getRenderViewEntity();
             Frustum frustum = new Frustum();
             frustum.setPosition(viewer.posX, viewer.posY, viewer.posZ);
@@ -239,7 +245,7 @@ public class Diana {
             if (block && frustum.isBoxInFrustum(burrow.xCoord, burrow.yCoord, burrow.zCoord, burrow.xCoord + 1, burrow.yCoord + 1, burrow.zCoord + 1))
                 WaypointUtils.drawFilledBoundingBox(new AxisAlignedBB(x, y, z, x + 1, y + 1, z + 1), Color.BLUE, 0.4f);
             GlStateManager.disableTexture2D();
-            if (beam && distSq > 5*5) WaypointUtils.renderBeaconBeam(x, y + 1, z, Color.BLUE.getRGB(), 0.25f, event.partialTicks);
+            if (beam && distSq > 25) WaypointUtils.renderBeaconBeam(x, y + 1, z, Color.BLUE.getRGB(), 0.25f, event.partialTicks);
             if (text) WaypointUtils.renderWaypointText("§bGuess", burrow.addVector(0,1,0), event.partialTicks);
             GlStateManager.disableLighting();
             GlStateManager.enableTexture2D();
