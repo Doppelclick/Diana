@@ -149,7 +149,7 @@ public class Diana {
         if (event.name.equals("note.harp") && guess && echo) {
             pitch.add(event.sound.getPitch());
             sounds.add(new Vec3(event.sound.getXPosF(), event.sound.getYPosF(), event.sound.getZPosF()));
-            //calcBurrow();
+            calcBurrow();
         }
     }
 
