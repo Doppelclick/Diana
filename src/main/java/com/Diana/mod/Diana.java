@@ -53,6 +53,7 @@ public class Diana {
     public static Minecraft mc = Minecraft.getMinecraft();
     static boolean echo = false;
     static float lastpitch = 0;
+    static Vec3 playerp = new Vec3(0,0,0);
     static List<Float> pitch = new ArrayList<>();
     static List<Vec3> sounds = new ArrayList<>();
     static List<Vec3> particles = new ArrayList<>();
@@ -116,6 +117,7 @@ public class Diana {
                 if (player.getHeldItem() != null) {
                     if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
                         resetData();
+                        playerp = player.getPositionVector();
                         echo = true;
                         clicked = System.currentTimeMillis();
                     }
@@ -175,7 +177,7 @@ public class Diana {
         }
         all /= pitch.size() - 1;
 
-        Vec3 first = new Vec3(particles.get(0).xCoord, particles.get(4).yCoord, particles.get(0).zCoord);
+        Vec3 first = new Vec3(playerp.xCoord, particles.get(4).yCoord, playerp.zCoord);
 
         //Vec3 firsts = new Vec3(sounds.get(0).xCoord, sounds.get(4).yCoord, sounds.get(0).zCoord);
         //Vec3 firstp = new Vec3(particles.get(0).xCoord, particles.get(4).yCoord, particles.get(0).zCoord);
@@ -258,6 +260,7 @@ public class Diana {
         echo = false;
         burrow = null;
         lastpitch = 0;
+        playerp = new Vec3(0,0,0);
         pitch = new ArrayList<>();
         sounds = new ArrayList<>();
         particles = new ArrayList<>();
