@@ -1,9 +1,13 @@
 package com.Diana.mod.config;
 
 import com.Diana.mod.Diana;
+import net.minecraft.util.BlockPos;
 import net.minecraftforge.common.config.Configuration;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Taken from DungeonRooms under Creative Commons Attribution-NonCommercial 3.0
@@ -85,6 +89,11 @@ public class config {
         if (!hasKey("render", "BeaconBeam")) writeBooleanConfig("render", "BeaconBeam", true);
         if (!hasKey("render", "BeaconText")) writeBooleanConfig("render", "BeaconText", true);
 
+        if (!hasKey("warps", "castle")) writeBooleanConfig("warps", "castle", true);
+        if (!hasKey("warps", "da")) writeBooleanConfig("warps", "da", true);
+        if (!hasKey("warps", "crypt")) writeBooleanConfig("warps", "crypt", true);
+        if (!hasKey("warps", "museum")) writeBooleanConfig("warps", "museum", true);
+
         Diana.toggle = getBoolean("toggles", "ModToggle");
         Diana.guess = getBoolean("toggles", "GuessBurrow");
         Diana.proximity = getBoolean("toggles", "BurrowProximity");
@@ -93,5 +102,15 @@ public class config {
         Diana.block = getBoolean("render", "BeaconBlock");
         Diana.beam = getBoolean("render", "BeaconBeam");
         Diana.text = getBoolean("render", "BeaconText");
+
+        List<String> disabledWarps = new ArrayList<>();
+        if (!getBoolean("warps", "castle")) disabledWarps.add("castle");
+        if (!getBoolean("warps", "da")) disabledWarps.add("da");
+        if (!getBoolean("warps", "crypt")) disabledWarps.add("crypt");
+        if (!getBoolean("warps", "museum")) disabledWarps.add("museum");
+
+        for (Map.Entry<BlockPos, String> warp : Diana.warps.entrySet()) {
+            if (disabledWarps.contains(warp.getValue())) Diana.warps.put(warp.getKey(), "unused");
+        }
     }
 }

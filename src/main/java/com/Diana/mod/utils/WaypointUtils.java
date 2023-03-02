@@ -175,7 +175,7 @@ public class WaypointUtils {
      * https://github.com/Moulberry/NotEnoughUpdates/blob/master/LICENSE
      * @author Moulberry
      */
-    public static void renderWaypointText(String str, Vec3 loc, float partialTicks) {
+    public static void renderWaypointText(String str, Vec3 loc, float partialTicks, float scale) {
         GlStateManager.alphaFunc(516, 0.1F);
 
         GlStateManager.pushMatrix();
@@ -199,7 +199,11 @@ public class WaypointUtils {
         GlStateManager.translate(x, y, z);
         GlStateManager.translate(0, viewer.getEyeHeight(), 0);
 
+        GlStateManager.scale(scale, scale, 1);
+
         drawNametag(str);
+
+        GlStateManager.scale(1/scale, 1/scale, 1);
 
         GlStateManager.rotate(-Minecraft.getMinecraft().getRenderManager().playerViewY, 0.0F, 1.0F, 0.0F);
         GlStateManager.rotate(Minecraft.getMinecraft().getRenderManager().playerViewX, 1.0F, 0.0F, 0.0F);
@@ -207,7 +211,11 @@ public class WaypointUtils {
         GlStateManager.rotate(-Minecraft.getMinecraft().getRenderManager().playerViewX, 1.0F, 0.0F, 0.0F);
         GlStateManager.rotate(Minecraft.getMinecraft().getRenderManager().playerViewY, 0.0F, 1.0F, 0.0F);
 
+        GlStateManager.scale(scale, scale, 1);
+
         drawNametag(EnumChatFormatting.YELLOW.toString()+Math.round(dist)+"m");
+
+        GlStateManager.scale(1/scale, 1/scale, 1);
 
         GlStateManager.popMatrix();
 

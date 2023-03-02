@@ -7,6 +7,7 @@ import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
+
 import java.util.List;
 
 public class DianaCommand extends CommandBase {
@@ -39,7 +40,7 @@ public class DianaCommand extends CommandBase {
     @Override
     public List<String> addTabCompletionOptions(ICommandSender sender, String[] strings, BlockPos pos) {
         if (strings.length == 1) {
-            return getListOfStringsMatchingLastWord(strings, "help", "toggle", "guess", "proximity", "beacon");
+            return getListOfStringsMatchingLastWord(strings, "help", "toggle", "guess", "proximity", "messages", "beacon");
         }
         if ((strings.length == 2) && strings[1].equalsIgnoreCase("beacon")) {
             return getListOfStringsMatchingLastWord(strings, "help", "block", "beam", "text");
@@ -50,7 +51,7 @@ public class DianaCommand extends CommandBase {
     public void processCommand(ICommandSender sender, String[] strings) {
         EntityPlayer player = (EntityPlayer) sender;
         if (strings.length < 1) {
-            player.addChatMessage(new ChatComponentText("§3[Diana] §rFor available commands use \"/zt help\"."));
+            player.addChatMessage(new ChatComponentText("§3[Diana] §rFor available commands use \"/diana help\"."));
         } else {
             switch (strings[0].toLowerCase()) {
                 case "toggle":
