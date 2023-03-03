@@ -78,8 +78,6 @@ public class Diana {
     public static boolean block = false;
     public static boolean beam = true;
     public static boolean text = true;
-    public static final double DEG_TO_RAD = Math.PI / 180.0;
-    public static final double RAD_TO_DEG = 180.0 / Math.PI;
 
     public static Minecraft mc = Minecraft.getMinecraft();
     static boolean echo = false;
@@ -89,10 +87,13 @@ public class Diana {
     static List<Vec3> sounds = new ArrayList<>();
     static List<Vec3> particles = new ArrayList<>();
     static long clicked = 0;
-    static Vec3 burrow = null;
+    public static Vec3 burrow = null;
     static HashMap<BlockPos, particleBurrow> particleBurrows = new HashMap<>();
     public static int lastdug = 1;
     public static BlockPos dugburrow = null;
+    public static Vec3 selected = null;
+    static float scale = 1;
+    static long scaleTime = 0;
 
 
     @Mod.EventHandler
@@ -295,46 +296,65 @@ public class Diana {
      */
     @SubscribeEvent
     void worldRender(RenderWorldLastEvent event) {
-        if (!toggle) return;
+        if (!toggle &! block &! beam &! text) return;
         EntityPlayerSP player = mc.thePlayer;
         if (player==null) return;
-
-        if (!block &! beam &! text) return;
-        //Vec3 eyes = new Vec3(player.posX, player.posY + (double)player.getEyeHeight(), player.posZ);
-        //float aspectRatio = (float) mc.displayWidth / (float) mc.displayHeight;
-        //float playerYaw = player.rotationYaw;
-        //float playerPitch = player.rotationPitch;
-        //double fovV = mc.gameSettings.fovSetting * mc.thePlayer.getFovModifier();
-        //double fovH = Math.atan(aspectRatio * Math.tan(fovV * DEG_TO_RAD / 2)) * 2 * RAD_TO_DEG;
-        //float verticalSpacing = (float) (fovV * 0.8);
-        //float horizontalSpacing = (float) (fovH * 0.9);
-        //if (mc.gameSettings.thirdPersonView == 2) {
-        //    playerYaw = playerYaw + 180.0F;
-        //    playerPitch = -playerPitch;
-        //}
-
-        //float yawScaled = horizontalSpacing * ((playerPitch * playerPitch / 8100) + 1);
-
-        //Vec3 direction = getVectorFromRotation(yawScaled + playerYaw, verticalSpacing + playerPitch);
-
-        //Vec3 playerview = eyes.addVector(direction.xCoord * 64, direction.yCoord * 64, direction.zCoord * 64);
-
+        double distance = 129600;
         if (guess && burrow != null) {
-            renderBeacon(event.partialTicks, "§bGuess (" + lastdug + "/4)", 1, burrow, waypointColors.get(lastdug));
+            double dist = distanceTo(burrow, player);
+            if (dist < 25) {
+                distance = dist;
+                selected = burrow;
+            }
         }
-        //if (proximity &! particleBurrows.isEmpty()) {
-        //    for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
-        //        renderBeacon(event.partialTicks, "(" + burrow.getValue().type + "/4)", 1, new Vec3(burrow.getKey()), waypointColors.get(burrow.getValue().type));
-        //    }
-        //}
+        if (proximity &! particleBurrows.isEmpty()) {
+            for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
+                double dist = distanceTo(new Vec3(burrow.getKey()), player);
+                if (dist < 25 && dist < distance) {
+                    distance = dist;
+                    selected = new Vec3(burrow.getKey());
+                }
+            }
+        }
+        if (selected != null) {
+            if (distance == 129600) {
+                scale = 1;
+                selected = null;
+                scaleTime = 0;
+            } else if (scaleTime == 0) {
+                scaleTime = System.currentTimeMillis();
+            } else {
+                long time = System.currentTimeMillis() - scaleTime;
+                if (time <= 1500) {
+                    scale = 1 +  (float)time / 1500;
+                } else if (scale != 2) {
+                    scale = 2;
+                }
+            }
+        }
+        if (guess && burrow != null) {
+            float sc = 1;
+            if (selected != null) if (burrow.equals(selected)) sc = scale;
+            renderBeacon(event.partialTicks, "§bGuess (" + lastdug + "/4)", sc, burrow, waypointColors.get(lastdug));
+        }
+        if (proximity &! particleBurrows.isEmpty()) {
+            for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
+                float sc = 1;
+                if (selected != null) if (burrow.getKey().equals(new BlockPos(selected))) sc = scale;
+                renderBeacon(event.partialTicks, "(" + burrow.getValue().type + "/4)", sc, new Vec3(burrow.getKey()), waypointColors.get(burrow.getValue().type));
+            }
+        }
     }
 
-    public static Vec3 getVectorFromRotation(float yaw, float pitch) {
-        float f = MathHelper.cos(-yaw * (float) DEG_TO_RAD - (float) Math.PI);
-        float f1 = MathHelper.sin(-yaw * (float) DEG_TO_RAD - (float) Math.PI);
-        float f2 = -MathHelper.cos(-pitch * (float) DEG_TO_RAD);
-        float f3 = MathHelper.sin(-pitch * (float) DEG_TO_RAD);
-        return new Vec3( f1 * f2, f3, f * f2);
+    public static double getYaw(Vec3 playerp, Vec3 point) { //horizontal
+        double yaw = (Math.atan2(playerp.xCoord - point.xCoord, point.zCoord - playerp.zCoord) * 180/Math.PI) % 360;
+        if (yaw<0) yaw+=360;
+        return yaw;
+    }
+    public static double getPitch(Vec3 playerp, Vec3 point) { //vertical
+        double pitch = Math.atan2(playerp.yCoord - point.yCoord, Math.hypot(playerp.xCoord - point.xCoord , playerp.zCoord - point.zCoord)) * 180/Math.PI;
+        if (pitch<0) pitch+=360;
+        return pitch % 360;
     }
 
     void renderBeacon(float partialTicks, String info, float scale, Vec3 pos, Color color) {
@@ -376,11 +396,11 @@ public class Diana {
     void key(InputEvent.KeyInputEvent event) {
         EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
         if (!toggle || player==null) return;
-        if (keyBindings[0].isPressed() && burrow != null) {
+        if (keyBindings[0].isPressed() && selected != null) {
             String name = "unused";
             BlockPos pos = new BlockPos(player.getPositionVector());
             for (Map.Entry<BlockPos, String> warp : warps.entrySet()) {
-                if (new BlockPos(burrow).distanceSq(pos) > new BlockPos(burrow).distanceSq(warp.getKey()) &! warp.getValue().equals("unused")) {
+                if (new BlockPos(selected).distanceSq(pos) > new BlockPos(selected).distanceSq(warp.getKey()) &! warp.getValue().equals("unused")) {
                     name = warp.getValue();
                     pos = warp.getKey();
                 }
@@ -426,6 +446,18 @@ public class Diana {
         }
     }
 
+    public static double distanceTo(Vec3 b, EntityPlayerSP player) {
+        Vec3 burrow = b.addVector(-0.5, 0.5, -0.5);
+        Vec3 playerp = player.getPositionVector().addVector(0,1,0);
+        float yaw = player.rotationYaw % 360;
+        if (yaw<0) yaw+=360;
+        float pitch = player.rotationPitch;
+        double diffy = Math.abs(Diana.getYaw(playerp, burrow) - yaw);
+        double diffp = Math.abs(Diana.getPitch(playerp, burrow) - pitch);
+        //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Stats: [p " + yaw + ", " + pitch + "] [ptb " + ya + ", " + pi + "] [diff " + diffy + ", " + diffp + "]"));
+        return diffy * diffp;
+    }
+
     static void resetData() {
         lastdug = 1;
         echo = false;
@@ -438,6 +470,9 @@ public class Diana {
         clicked = 0;
         particleBurrows = new HashMap<>();
         dugburrow = null;
+        selected = null;
+        scale = 1;
+        scaleTime = 0;
     }
 
     @SubscribeEvent

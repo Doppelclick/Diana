@@ -2,11 +2,13 @@ package com.Diana.mod.commands;
 
 import com.Diana.mod.Diana;
 import com.Diana.mod.config.config;
+import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.Vec3;
 
 import java.util.List;
 
@@ -76,6 +78,19 @@ public class DianaCommand extends CommandBase {
                     Diana.messages=!Diana.messages;
                     Diana.mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rToggled messages " + config.understandMe(Diana.messages)));
                     config.writeBooleanConfig("toggles", "Messages", Diana.messages);
+                    break;
+
+                case "test":
+                    if (strings.length == 4) {
+                        try {
+                            int x = Integer.parseInt(strings[1]);
+                            int y = Integer.parseInt(strings[2]);
+                            int z = Integer.parseInt(strings[3]);
+                            Diana.burrow = new Vec3(x, y, z);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
                     break;
 
                 case "beacon":
