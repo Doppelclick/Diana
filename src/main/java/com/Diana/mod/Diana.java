@@ -18,6 +18,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.init.Blocks;
 import net.minecraft.network.play.client.C07PacketPlayerDigging;
+import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
 import net.minecraft.network.play.server.S2APacketParticles;
 import net.minecraft.util.*;
 import net.minecraftforge.client.ClientCommandHandler;
@@ -168,10 +169,18 @@ public class Diana {
 
     @SubscribeEvent
     void sendPacket(PacketEvent.SendEvent event) {
+        EntityPlayerSP player = mc.thePlayer;
+        if (player == null) return;
         if (event.packet instanceof C07PacketPlayerDigging) {
             C07PacketPlayerDigging packet = (C07PacketPlayerDigging) event.packet;
             if (packet.getStatus().equals(C07PacketPlayerDigging.Action.START_DESTROY_BLOCK)) {
                 dugburrow = packet.getPosition();
+            }
+        } else if (event.packet instanceof C08PacketPlayerBlockPlacement) {
+            if (player.getHeldItem() != null) {
+                if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
+                    dugburrow = ((C08PacketPlayerBlockPlacement) event.packet).getPosition();
+                }
             }
         }
     }
@@ -192,13 +201,14 @@ public class Diana {
                     }
                 }
             }
-        } else if (event.action == PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) {
-            if (player.getHeldItem() != null) {
-                if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade") && mc.theWorld.getBlockState(event.pos).getBlock().equals(Blocks.grass)) {
-                        dugburrow = event.pos;
-                    }
-                }
         }
+        //else if (event.action == PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) {
+        //    if (player.getHeldItem() != null) {
+        //        if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade") && mc.theWorld.getBlockState(event.pos).getBlock().equals(Blocks.grass)) {
+        //                dugburrow = event.pos;
+        //            }
+        //        }
+        //}
         //else if (event.action == PlayerInteractEvent.Action.LEFT_CLICK_BLOCK) {
         //    dugburrow = event.pos;
         //}
@@ -242,13 +252,14 @@ public class Diana {
             S2APacketParticles particle = (S2APacketParticles) event.packet;
             if (particle.getParticleType() == EnumParticleTypes.FIREWORKS_SPARK && particle.getParticleSpeed() == 0 && guess && echo) {
                 particles.add(new Vec3(particle.getXCoordinate(), particle.getYCoordinate(), particle.getZCoordinate()));
-            } else if (proximity && player.getHeldItem() != null) {
-                if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
-                    particleBurrow burrow1 = new particleBurrow();
-                    burrow1.setType(particle.getParticleType(), particle.getParticleCount(), particle.getParticleSpeed(), particle.getXOffset(), particle.getYOffset(), particle.getZOffset());
-                    particleBurrows.put(new BlockPos(particle.getXCoordinate(), particle.getYCoordinate(), particle.getZCoordinate()), burrow1);
-                }
             }
+            //else if (proximity && player.getHeldItem() != null) {
+            //    if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
+            //        particleBurrow burrow1 = new particleBurrow();
+            //        burrow1.setType(particle.getParticleType(), particle.getParticleCount(), particle.getParticleSpeed(), particle.getXOffset(), particle.getYOffset(), particle.getZOffset());
+            //        particleBurrows.put(new BlockPos(particle.getXCoordinate(), particle.getYCoordinate(), particle.getZCoordinate()), burrow1);
+            //    }
+            //}
         }
     }
 
@@ -307,15 +318,15 @@ public class Diana {
                 selected = burrow;
             }
         }
-        if (proximity &! particleBurrows.isEmpty()) {
-            for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
-                double dist = distanceTo(new Vec3(burrow.getKey()), player);
-                if (dist < distance) {
-                    distance = dist;
-                    selected = new Vec3(burrow.getKey());
-                }
-            }
-        }
+        //if (proximity &! particleBurrows.isEmpty()) {
+        //    for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
+        //        double dist = distanceTo(new Vec3(burrow.getKey()), player);
+        //        if (dist < distance) {
+        //            distance = dist;
+        //            selected = new Vec3(burrow.getKey());
+        //        }
+        //    }
+        //}
         if (selected != null) {
             if (distance == 129600) {
                 scale = 1;
@@ -337,13 +348,13 @@ public class Diana {
             if (selected != null) if (burrow.equals(selected)) sc = scale;
             renderBeacon(event.partialTicks, "§bGuess (" + lastdug + "/4)", sc, burrow, waypointColors.get(lastdug));
         }
-        if (proximity &! particleBurrows.isEmpty()) {
-            for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
-                float sc = 1;
-                if (selected != null) if (burrow.getKey().equals(new BlockPos(selected))) sc = scale;
-                renderBeacon(event.partialTicks, "(" + burrow.getValue().type + "/4)", sc, new Vec3(burrow.getKey()), waypointColors.get(burrow.getValue().type));
-            }
-        }
+        //if (proximity &! particleBurrows.isEmpty()) {
+        //    for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
+        //        float sc = 1;
+        //        if (selected != null) if (burrow.getKey().equals(new BlockPos(selected))) sc = scale;
+        //        renderBeacon(event.partialTicks, "(" + burrow.getValue().type + "/4)", sc, new Vec3(burrow.getKey()), waypointColors.get(burrow.getValue().type));
+        //    }
+        //}
     }
 
     public static double getYaw(Vec3 playerp, Vec3 point) { //horizontal
@@ -405,6 +416,7 @@ public class Diana {
             }
             if (!name.equals("unused")) {
                 mc.thePlayer.sendChatMessage("/warp " + name);
+                if (messages) mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rWarped to " + name));
                 lastwarp = name;
             }
         }
@@ -453,9 +465,9 @@ public class Diana {
         double lowerp = Diana.getPitch(playerp, burrow);
         double highery = Diana.getYaw(playerp, burrow.addVector(1,1,1));
         double lowp = Diana.getPitch(playerp, burrow.addVector(0.5,1,0.5));
-        double topp = Diana.getPitch(playerp, new Vec3(burrow.xCoord+0.5, 255, burrow.zCoord+0.5));
-        double tolerancey = Math.abs(highery - lowery) * 1.5;
-        double tolerancep = Math.abs(lowp - lowerp) * 1.2;
+        double topp = Diana.getPitch(playerp, new Vec3(burrow.xCoord + 0.5, 255, burrow.zCoord + 0.5));
+        double tolerancey = Math.abs(highery - lowery) * Math.sqrt(Math.hypot(playerp.xCoord - burrow.xCoord , playerp.zCoord - burrow.zCoord));
+        double tolerancep = Math.abs(lowp - lowerp);
         double distance = 129600;
         if (lowery-tolerancey < yaw && yaw < highery+tolerancey && pitch < lowp + tolerancep && pitch > topp) distance = (highery - yaw) * (lowp - pitch);
         return distance;
