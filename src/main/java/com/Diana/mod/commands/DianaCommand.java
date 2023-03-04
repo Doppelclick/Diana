@@ -13,18 +13,19 @@ import java.util.List;
 
 public class DianaCommand extends CommandBase {
     static String help = "§3Diana Solver\n§r"
-            + " /diana help | This message\n"
-            + " /diana toggle | Toggle the mod\n"
-            + " /diana guess | Toggle burrow guess\n"
-            + " /diana proximity | Toggle burrow\n"
-            + " /diana messages | Toggle messages\n"
-            + " /diana beacon [help, block, beam, text]";
+            + " /diana help §7| This message§r\n"
+            + " /diana toggle §7| Toggle the mod§r\n"
+            + " /diana guess §7| Toggle burrow guess§r\n"
+            + " /diana interpolation §7| Toggle interpolation for guess burrow§r\n"
+            + " /diana proximity §7| Toggle burrow§r\n"
+            + " /diana messages §7| Toggle messages§r\n"
+            + " /diana beacon §7[help, block, beam, text]§r";
 
-    static String beaconHelp = "§3Diana Solver §r beacon options\n"
-            + " /diana beacon help | This message\n"
-            + " /diana beacon block | Toggle beacon block\n"
-            + " /diana beacon beam | Toggle beacon beam\n"
-            + " /diana beacon text | Toggle beacon text";
+    static String beaconHelp = "§3Diana Solver §rbeacon options\n"
+            + " /diana beacon help §7| This message§r\n"
+            + " /diana beacon block §7| Toggle beacon block§r\n"
+            + " /diana beacon beam §7| Toggle beacon beam§r\n"
+            + " /diana beacon text §7| Toggle beacon text§r";
 
     @Override
     public String getCommandName() {
@@ -41,7 +42,7 @@ public class DianaCommand extends CommandBase {
     @Override
     public List<String> addTabCompletionOptions(ICommandSender sender, String[] strings, BlockPos pos) {
         if (strings.length == 1) {
-            return getListOfStringsMatchingLastWord(strings, "help", "toggle", "guess", "proximity", "messages", "beacon");
+            return getListOfStringsMatchingLastWord(strings, "help", "toggle", "guess", "interpolation", "proximity", "messages", "beacon");
         }
         if ((strings.length == 2) && strings[1].equalsIgnoreCase("beacon")) {
             return getListOfStringsMatchingLastWord(strings, "help", "block", "beam", "text");
@@ -52,7 +53,7 @@ public class DianaCommand extends CommandBase {
     public void processCommand(ICommandSender sender, String[] strings) {
         EntityPlayer player = (EntityPlayer) sender;
         if (strings.length < 1) {
-            player.addChatMessage(new ChatComponentText("§3[Diana] §rFor available commands use \"/diana help\"."));
+            Diana.mc.thePlayer.addChatMessage(new ChatComponentText(help));
         } else {
             switch (strings[0].toLowerCase()) {
                 case "toggle":
@@ -65,6 +66,12 @@ public class DianaCommand extends CommandBase {
                     Diana.guess=!Diana.guess;
                     Diana.mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rToggled burrow guess " + config.understandMe(Diana.guess)));
                     config.writeBooleanConfig("toggles", "GuessBurrow", Diana.guess);
+                    break;
+
+                case "interpolation":
+                    Diana.interpolation=!Diana.interpolation;
+                    Diana.mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rToggled burrow guess interpolation " + config.understandMe(Diana.interpolation)));
+                    config.writeBooleanConfig("toggles", "Interpolation", Diana.interpolation);
                     break;
 
                 case "proximity":

@@ -82,6 +82,7 @@ public class config {
 
         if (!hasKey("toggles", "ModToggle")) writeBooleanConfig("toggles", "ModToggle", false);
         if (!hasKey("toggles", "GuessBurrow")) writeBooleanConfig("toggles", "GuessBurrow", false);
+        if (!hasKey("toggles", "Interpolation")) writeBooleanConfig("toggles", "Interpolation", true);
         if (!hasKey("toggles", "BurrowProximity")) writeBooleanConfig("toggles", "BurrowProximity", false);
         if (!hasKey("toggles", "Messages")) writeBooleanConfig("toggles", "Messages", false);
 
@@ -96,6 +97,7 @@ public class config {
 
         Diana.toggle = getBoolean("toggles", "ModToggle");
         Diana.guess = getBoolean("toggles", "GuessBurrow");
+        Diana.interpolation = getBoolean("toggles", "Interpolation");
         Diana.proximity = getBoolean("toggles", "BurrowProximity");
         Diana.messages = getBoolean("toggles", "Messages");
 

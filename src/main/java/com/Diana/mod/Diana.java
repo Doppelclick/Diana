@@ -73,6 +73,7 @@ public class Diana {
 
     public static boolean toggle = false;
     public static boolean guess = false;
+    public static boolean interpolation = true;
     public static boolean proximity = false;
     public static boolean messages = false;
     public static boolean block = false;
@@ -81,19 +82,22 @@ public class Diana {
 
     public static Minecraft mc = Minecraft.getMinecraft();
     static boolean echo = false;
-    static float lastpitch = 0;
     static Vec3 playerp = new Vec3(0,0,0);
     static List<Float> pitch = new ArrayList<>();
     static List<Vec3> sounds = new ArrayList<>();
     static List<Vec3> particles = new ArrayList<>();
     static long clicked = 0;
     public static Vec3 burrow = null;
+    public static Vec3 lastburrow = null;
+    public static Vec3 lastlastburrow = null;
     static HashMap<BlockPos, particleBurrow> particleBurrows = new HashMap<>();
     public static int lastdug = 1;
     public static BlockPos dugburrow = null;
     public static Vec3 selected = null;
     static float scale = 1;
     static long scaleTime = 0;
+    static long lastinterp = 0;
+    static long interp = 0;
 
 
     @Mod.EventHandler
@@ -310,8 +314,26 @@ public class Diana {
         EntityPlayerSP player = mc.thePlayer;
         if (player==null) return;
         double distance = 129600;
+        Vec3 guesspos = null;
         if (guess && burrow != null) {
-            double dist = distanceTo(burrow, player);
+            if (interpolation) {
+                if (lastlastburrow == null) lastlastburrow = burrow;
+                if (lastburrow == null) lastburrow = burrow;
+                double interpFactor = Math.max(0, Math.min(1, Math.round((System.currentTimeMillis() - interp) * 100f) / 100f / (interp - lastinterp)));
+                double x = lastlastburrow.xCoord + (lastburrow.xCoord - lastlastburrow.xCoord) * interpFactor;
+                double y = lastlastburrow.yCoord + (lastburrow.yCoord - lastlastburrow.yCoord) * interpFactor;
+                double z = lastlastburrow.zCoord + (lastburrow.zCoord - lastlastburrow.zCoord) * interpFactor;
+                guesspos = new Vec3(x, y, z);
+
+                if (!lastburrow.equals(burrow)) {
+                    lastinterp = interp;
+                    lastlastburrow = lastburrow;
+                    interp = System.currentTimeMillis();
+                    lastburrow = burrow;
+                }
+            } else guesspos = burrow;
+
+            double dist = distanceTo(guesspos, player);
             if (dist < 129600) {
                 distance = dist;
                 selected = burrow;
@@ -342,10 +364,10 @@ public class Diana {
                 }
             }
         }
-        if (guess && burrow != null) {
+        if (guess && guesspos != null) {
             float sc = 1;
             if (selected != null) if (burrow.equals(selected)) sc = scale;
-            renderBeacon(event.partialTicks, "§bGuess (" + lastdug + "/4)", sc, burrow, waypointColors.get(lastdug));
+            renderBeacon(event.partialTicks, "§bGuess (" + lastdug + "/4)", sc, guesspos, waypointColors.get(lastdug));
         }
         //if (proximity &! particleBurrows.isEmpty()) {
         //    for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
@@ -476,7 +498,6 @@ public class Diana {
         lastdug = 1;
         echo = false;
         burrow = null;
-        lastpitch = 0;
         playerp = new Vec3(0,0,0);
         pitch = new ArrayList<>();
         sounds = new ArrayList<>();
@@ -487,6 +508,10 @@ public class Diana {
         selected = null;
         scale = 1;
         scaleTime = 0;
+        lastburrow = null;
+        lastlastburrow = null;
+        lastinterp = 0;
+        interp = 0;
     }
 
     @SubscribeEvent
