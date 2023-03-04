@@ -196,26 +196,19 @@ public class WaypointUtils {
             y *= 12/dist;
             z *= 12/dist;
         }
+
         GlStateManager.translate(x, y, z);
         GlStateManager.translate(0, viewer.getEyeHeight(), 0);
 
-        //GlStateManager.scale(scale, scale, 1);
-
-        drawNametag(str);
-
-        //GlStateManager.scale(1/scale, 1/scale, 1);
+        drawNametag(str, scale);
 
         GlStateManager.rotate(-Minecraft.getMinecraft().getRenderManager().playerViewY, 0.0F, 1.0F, 0.0F);
         GlStateManager.rotate(Minecraft.getMinecraft().getRenderManager().playerViewX, 1.0F, 0.0F, 0.0F);
-        GlStateManager.translate(0, -0.25f, 0);
+        GlStateManager.translate(0, -0.25f*scale, 0);
         GlStateManager.rotate(-Minecraft.getMinecraft().getRenderManager().playerViewX, 1.0F, 0.0F, 0.0F);
         GlStateManager.rotate(Minecraft.getMinecraft().getRenderManager().playerViewY, 0.0F, 1.0F, 0.0F);
 
-        //GlStateManager.scale(scale, scale, 1);
-
-        drawNametag(EnumChatFormatting.YELLOW.toString()+Math.round(dist)+"m");
-
-        //GlStateManager.scale(1/scale, 1/scale, 1);
+        drawNametag(EnumChatFormatting.YELLOW.toString()+Math.round(dist)+"m", scale);
 
         GlStateManager.popMatrix();
 
@@ -227,10 +220,10 @@ public class WaypointUtils {
      * https://github.com/Moulberry/NotEnoughUpdates/blob/master/LICENSE
      * @author Moulberry
      */
-    public static void drawNametag(String str) {
+    public static void drawNametag(String str, float scale) {
         FontRenderer fontrenderer = Minecraft.getMinecraft().fontRendererObj;
         float f = 1.6F;
-        float f1 = 0.016666668F * f;
+        float f1 = 0.016666668F * f * scale;
         GlStateManager.pushMatrix();
         GL11.glNormal3f(0.0F, 1.0F, 0.0F);
         GlStateManager.rotate(-Minecraft.getMinecraft().getRenderManager().playerViewY, 0.0F, 1.0F, 0.0F);

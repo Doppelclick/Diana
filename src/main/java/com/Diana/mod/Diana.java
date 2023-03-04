@@ -302,7 +302,7 @@ public class Diana {
         double distance = 129600;
         if (guess && burrow != null) {
             double dist = distanceTo(burrow, player);
-            if (dist < 25) {
+            if (dist < 129600) {
                 distance = dist;
                 selected = burrow;
             }
@@ -310,7 +310,7 @@ public class Diana {
         if (proximity &! particleBurrows.isEmpty()) {
             for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
                 double dist = distanceTo(new Vec3(burrow.getKey()), player);
-                if (dist < 25 && dist < distance) {
+                if (dist < distance) {
                     distance = dist;
                     selected = new Vec3(burrow.getKey());
                 }
@@ -325,8 +325,8 @@ public class Diana {
                 scaleTime = System.currentTimeMillis();
             } else {
                 long time = System.currentTimeMillis() - scaleTime;
-                if (time <= 1500) {
-                    scale = 1 +  (float)time / 1500;
+                if (time <= 150) {
+                    scale = 1 +  (float)time / 150;
                 } else if (scale != 2) {
                     scale = 2;
                 }
@@ -352,9 +352,7 @@ public class Diana {
         return yaw;
     }
     public static double getPitch(Vec3 playerp, Vec3 point) { //vertical
-        double pitch = Math.atan2(playerp.yCoord - point.yCoord, Math.hypot(playerp.xCoord - point.xCoord , playerp.zCoord - point.zCoord)) * 180/Math.PI;
-        if (pitch<0) pitch+=360;
-        return pitch % 360;
+        return (Math.atan2(playerp.yCoord + 1 - point.yCoord, Math.hypot(playerp.xCoord - point.xCoord , playerp.zCoord - point.zCoord)) * 180/Math.PI) % 360;
     }
 
     void renderBeacon(float partialTicks, String info, float scale, Vec3 pos, Color color) {
@@ -372,10 +370,10 @@ public class Diana {
         GlStateManager.disableDepth();
         GlStateManager.disableCull();
         if (block && frustum.isBoxInFrustum(pos.xCoord, pos.yCoord, pos.zCoord, pos.xCoord + 1, pos.yCoord + 1, pos.zCoord + 1))
-            WaypointUtils.drawFilledBoundingBox(new AxisAlignedBB(x, y, z, x + 1, y + 1, z + 1), color, 0.4f);
+            WaypointUtils.drawFilledBoundingBox(new AxisAlignedBB(x - scale + 1, y - scale + 1, z - scale + 1, x + scale, y + scale, z + scale), color, 0.4f);
         GlStateManager.disableTexture2D();
-        if (beam && distSq > 25) WaypointUtils.renderBeaconBeam(x, y + 1, z, color.getRGB(), 0.25f, partialTicks);
-        if (text) WaypointUtils.renderWaypointText(info, pos.addVector(0,1,0), partialTicks, scale);
+        if (beam && distSq > 25) WaypointUtils.renderBeaconBeam(x, y + scale, z, color.getRGB(), 0.25f, partialTicks);
+        if (text) WaypointUtils.renderWaypointText(info, pos.addVector(0, scale,0), partialTicks, scale);
         GlStateManager.disableLighting();
         GlStateManager.enableTexture2D();
         GlStateManager.enableDepth();
@@ -446,16 +444,21 @@ public class Diana {
         }
     }
 
-    public static double distanceTo(Vec3 b, EntityPlayerSP player) {
-        Vec3 burrow = b.addVector(-0.5, 0.5, -0.5);
-        Vec3 playerp = player.getPositionVector().addVector(0,1,0);
+    public static double distanceTo(Vec3 burrow, EntityPlayerSP player) {
+        Vec3 playerp = player.getPositionVector().addVector(0,player.getEyeHeight(),0);
         float yaw = player.rotationYaw % 360;
         if (yaw<0) yaw+=360;
         float pitch = player.rotationPitch;
-        double diffy = Math.abs(Diana.getYaw(playerp, burrow) - yaw);
-        double diffp = Math.abs(Diana.getPitch(playerp, burrow) - pitch);
-        //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Stats: [p " + yaw + ", " + pitch + "] [ptb " + ya + ", " + pi + "] [diff " + diffy + ", " + diffp + "]"));
-        return diffy * diffp;
+        double lowery = Diana.getYaw(playerp, burrow);
+        double lowerp = Diana.getPitch(playerp, burrow);
+        double highery = Diana.getYaw(playerp, burrow.addVector(1,1,1));
+        double lowp = Diana.getPitch(playerp, burrow.addVector(0.5,1,0.5));
+        double topp = Diana.getPitch(playerp, new Vec3(burrow.xCoord+0.5, 255, burrow.zCoord+0.5));
+        double tolerancey = Math.abs(highery - lowery) * 1.5;
+        double tolerancep = Math.abs(lowp - lowerp) * 1.2;
+        double distance = 129600;
+        if (lowery-tolerancey < yaw && yaw < highery+tolerancey && pitch < lowp + tolerancep && pitch > topp) distance = (highery - yaw) * (lowp - pitch);
+        return distance;
     }
 
     static void resetData() {
