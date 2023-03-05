@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.item.EntityArmorStand;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.network.play.client.C07PacketPlayerDigging;
 import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
@@ -25,6 +26,7 @@ import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
@@ -63,7 +65,7 @@ public class Diana {
         put(new BlockPos(-76,75,80), "museum");
     }};
     public static String lastwarp = "unused";
-    HashMap<Integer, HashMap<Integer, Integer>> hubdata = new HashMap<>();
+    static HashMap<Integer, HashMap<Integer, Integer>> hubdata = new HashMap<>();
     public static HashMap<Integer, Color> waypointColors = new HashMap<Integer, Color>(){{
        put(1, Color.GREEN);
        put(2, Color.RED);
@@ -82,11 +84,14 @@ public class Diana {
 
     public static Minecraft mc = Minecraft.getMinecraft();
     static boolean echo = false;
-    static Vec3 playerp = new Vec3(0,0,0);
     static List<Float> pitch = new ArrayList<>();
     static List<Vec3> sounds = new ArrayList<>();
     static List<Vec3> particles = new ArrayList<>();
+    static List<Vec3> oldparticles = new ArrayList<>();
     static long clicked = 0;
+    static boolean arrow = false;
+    static Vec3 arrowStart = null;
+    static Vec3 arrowDir = null;
     public static Vec3 burrow = null;
     public static Vec3 lastburrow = null;
     public static Vec3 lastlastburrow = null;
@@ -171,6 +176,22 @@ public class Diana {
     }
 
     @SubscribeEvent
+    void entity(EntityJoinWorldEvent event) {
+        EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
+        if (player == null) return;
+        Vec3 playerPos = player.getPositionVector();
+        if (event.entity instanceof EntityArmorStand) {
+            EntityArmorStand e = (EntityArmorStand) event.entity;
+            if (e.getDisplayName().getUnformattedText().contains("Exalted Minos Inquisitor")) {
+                Vec3 distance = e.getPositionVector().subtract(playerPos);
+                if (Math.abs(distance.xCoord) < 10 && Math.abs(distance.yCoord) < 10 && Math.abs(distance.zCoord) < 10) {
+                    //todo: idk inq waypoint and chat message
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
     void sendPacket(PacketEvent.SendEvent event) {
         EntityPlayerSP player = mc.thePlayer;
         if (player == null) return;
@@ -197,8 +218,8 @@ public class Diana {
             if (System.currentTimeMillis() > clicked + 2000) {
                 if (player.getHeldItem() != null) {
                     if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
+                        oldparticles = particles;
                         resetData();
-                        playerp = player.getPositionVector();
                         echo = true;
                         clicked = System.currentTimeMillis();
                     }
@@ -220,10 +241,19 @@ public class Diana {
     @SubscribeEvent
     void tick(TickEvent event) {
         if (event.phase != TickEvent.Phase.START |! toggle) return;
-        if (guess && echo) {
-            if (System.currentTimeMillis() > clicked + 3000 || (particles.size() == 13 && pitch.size() == 13)) {
-                echo = false;
-                calcBurrow();
+        if (guess) {
+            if (echo) {
+                if (System.currentTimeMillis() > clicked + 3000 || (particles.size() == 13 && pitch.size() == 13)) {
+                    echo = false;
+                    calcBurrow();
+                    if (!oldparticles.isEmpty() || (arrowStart != null && arrowDir != null)) {
+                        intercept();
+                    }
+                }
+            }
+            if (arrow && arrowStart != null && arrowDir != null && particles.size() > 3) {
+                intercept();
+                arrow=false;
             }
         }
     }
@@ -253,8 +283,18 @@ public class Diana {
         if (player == null) return;
         if (event.packet instanceof S2APacketParticles) {
             S2APacketParticles particle = (S2APacketParticles) event.packet;
+            Vec3 pos = new Vec3(particle.getXCoordinate(), particle.getYCoordinate(), particle.getZCoordinate());
             if (particle.getParticleType() == EnumParticleTypes.FIREWORKS_SPARK && particle.getParticleSpeed() == 0 && guess && echo) {
-                particles.add(new Vec3(particle.getXCoordinate(), particle.getYCoordinate(), particle.getZCoordinate()));
+                particles.add(pos);
+            } else if (particle.getParticleType() == EnumParticleTypes.REDSTONE && particle.getParticleSpeed() == 1 && particle.getParticleCount() == 0 && guess && arrow) {
+                if (arrowStart == null) {
+                    arrowStart = pos;
+                } else if (arrowDir == null) {
+                    Vec3 dir = pos.subtract(arrowStart).normalize();
+                    if (dir.xCoord == 0 && dir.zCoord == 0) return;
+                    arrowDir = dir;
+                    arrow = false;
+                }
             }
             //else if (proximity && player.getHeldItem() != null) {
             //    if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
@@ -415,10 +455,10 @@ public class Diana {
     static class particleBurrow {
         int type = 0; //1 mob, 2 treasure, 3 footsteps, 4 enchants
         void setType(EnumParticleTypes particle, int count, float speed, float xOffset, float yOffset, float zOffset) {
-                if (particle == EnumParticleTypes.CRIT && count == 3 && speed == 0.01f && xOffset == 0.5f && yOffset == 0.1f && zOffset == 0.5f) this.type=1;
-                else if (particle == EnumParticleTypes.DRIP_LAVA && count == 2 && speed == 0.01f && xOffset == 0.35f && yOffset == 0.1f && zOffset == 0.35f) this.type=2;
-                else if (particle == EnumParticleTypes.FOOTSTEP && count == 1 && speed == 0.0f && xOffset == 0.05f && yOffset == 0.0f && zOffset == 0.05f) this.type=3;
-                else if(particle == EnumParticleTypes.ENCHANTMENT_TABLE && count == 5 && speed == 0.05f && xOffset == 0.5f && yOffset == 0.4f && zOffset == 0.5f) this.type=4;
+            if (particle == EnumParticleTypes.CRIT && count == 3 && speed == 0.01f && xOffset == 0.5f && yOffset == 0.1f && zOffset == 0.5f) this.type=1;
+            else if (particle == EnumParticleTypes.DRIP_LAVA && count == 2 && speed == 0.01f && xOffset == 0.35f && yOffset == 0.1f && zOffset == 0.35f) this.type=2;
+            else if (particle == EnumParticleTypes.FOOTSTEP && count == 1 && speed == 0.0f && xOffset == 0.05f && yOffset == 0.0f && zOffset == 0.05f) this.type=3;
+            else if(particle == EnumParticleTypes.ENCHANTMENT_TABLE && count == 5 && speed == 0.05f && xOffset == 0.5f && yOffset == 0.4f && zOffset == 0.5f) this.type=4;
         }
     }
 
@@ -461,6 +501,11 @@ public class Diana {
                 }
             }
         } if (message.contains("§r§eYou dug out a Griffin Burrow! §r§7(")) {
+            resetRender();
+            arrow = true;
+            arrowStart = null;
+            arrowDir = null;
+            oldparticles = new ArrayList<>();
             if (dugburrow != null) {
                 boolean removed = false;
                 if (particleBurrows.containsKey(dugburrow)) {
@@ -494,11 +539,57 @@ public class Diana {
         return distance;
     }
 
+    public static void intercept() {
+        EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
+        if (player==null) return;
+        Vec3 playerp = player.getPositionVector();
+
+        Vec3 p1 = particles.get(0);
+        Vec3 p2 = particles.get(particles.size() - 1).subtract(p1);
+        Vec3 a1;
+        Vec3 a2;
+        if (arrowStart!=null && arrowDir!=null) {
+            a1 = arrowStart;
+            a2 = arrowDir;
+        } else if (!oldparticles.isEmpty() && oldparticles.size() > 3) {
+            a1 = oldparticles.get(0);
+            a2 = oldparticles.get(oldparticles.size()-1).subtract(a1);
+        } else return;
+
+        /*
+        y1 = mx1 + b
+        m = d(irection)y1 / dx1
+        y1 = m1 * x1 + b1
+        repeat for set 2
+        x = (b2 - b1) / (m1 - m2)
+        y = m1 * x + b1  or into set 2
+        */
+
+        double pslope = p2.zCoord / p2.xCoord;
+        double py = p1.zCoord - pslope * p1.xCoord;
+        double aslope = a2.zCoord / a2.xCoord;
+        double ay = a1.zCoord - aslope * a1.xCoord;
+        double x = (ay - py) / (pslope - aslope);
+        double z = pslope * x + aslope;
+
+        Vec3 intercept = new Vec3(x, 0, z);
+        if (hubdata.containsKey((int) Math.round(intercept.xCoord))) {
+            if (hubdata.get((int) Math.round(intercept.xCoord)).containsKey((int) Math.round(intercept.zCoord))) {
+                intercept.addVector(0, hubdata.get((int) Math.round(intercept.xCoord)).get((int) Math.round(intercept.zCoord)), 0);
+            }
+        } if (intercept.yCoord==0) intercept.addVector(0, burrow.yCoord, 0);
+
+        Vec3 relguess = burrow.subtract(playerp);
+        Vec3 relintercept = intercept.subtract(playerp);
+        if ((Math.signum(relguess.xCoord) == Math.signum(relintercept.xCoord) && Math.signum(relguess.zCoord) == Math.signum(relintercept.zCoord) && burrow.distanceTo(intercept) < 20) || playerp.distanceTo(intercept) < 15) {
+            burrow = intercept;
+        }
+    }
+
     static void resetData() {
         lastdug = 1;
         echo = false;
         burrow = null;
-        playerp = new Vec3(0,0,0);
         pitch = new ArrayList<>();
         sounds = new ArrayList<>();
         particles = new ArrayList<>();
@@ -506,6 +597,8 @@ public class Diana {
         particleBurrows = new HashMap<>();
         dugburrow = null;
         selected = null;
+    }
+    static void resetRender() {
         scale = 1;
         scaleTime = 0;
         lastburrow = null;
@@ -516,6 +609,11 @@ public class Diana {
 
     @SubscribeEvent
     void worldUnload(WorldEvent.Unload event) {
+        arrow = false;
+        arrowStart = null;
+        arrowDir = null;
+        oldparticles = new ArrayList<>();
         resetData();
+        resetRender();
     }
 }
