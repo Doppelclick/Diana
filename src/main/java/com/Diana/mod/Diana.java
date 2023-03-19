@@ -528,14 +528,11 @@ public class Diana {
         if (yaw<0) yaw+=360;
         float pitch = player.rotationPitch;
         double lowery = Diana.getYaw(playerp, burrow);
-        double lowerp = Diana.getPitch(playerp, burrow);
         double highery = Diana.getYaw(playerp, burrow.addVector(1,1,1));
         double lowp = Diana.getPitch(playerp, burrow.addVector(0.5,1,0.5));
         double topp = Diana.getPitch(playerp, new Vec3(burrow.xCoord + 0.5, 255, burrow.zCoord + 0.5));
-        double tolerancey = Math.abs(highery - lowery) * Math.sqrt(Math.hypot(playerp.xCoord - burrow.xCoord , playerp.zCoord - burrow.zCoord));
-        double tolerancep = Math.abs(lowp - lowerp);
         double distance = 129600;
-        if (lowery-tolerancey < yaw && yaw < highery+tolerancey && pitch < lowp + tolerancep && pitch > topp) distance = (highery - yaw) * (lowp - pitch);
+        if (lowery-3 < yaw && yaw < highery+3 && pitch < lowp + 4 && pitch > topp) distance = (highery - yaw) * (lowp - pitch);
         return distance;
     }
 
