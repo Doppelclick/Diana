@@ -54,7 +54,7 @@ import java.util.Timer;
 @Mod(modid = Diana.Name, version = Diana.V)
 public class Diana {
     public static final String Name = "Diana";
-    public static final String V = "0.1.3";
+    public static final String V = "0.1.4";
     public static KeyBinding[] keyBindings = new KeyBinding[1];
     public static HashMap<BlockPos, String> warps = new HashMap<BlockPos, String>(){{
         put(new BlockPos(-3,69,-70), "hub");
