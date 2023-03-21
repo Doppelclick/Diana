@@ -47,10 +47,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
+import java.util.Timer;
 
 @Mod(modid = Diana.Name, version = Diana.V)
 public class Diana {
@@ -115,7 +114,7 @@ public class Diana {
         MinecraftForge.EVENT_BUS.register(this);
         config.cfgreload();
 
-        keyBindings[0] = new KeyBinding("Warp to closest spot to the burrow wp", Keyboard.KEY_NONE, "Diana");
+        keyBindings[0] = new KeyBinding("Warp to selected burrow", Keyboard.KEY_NONE, "Diana");
         for (KeyBinding keyBinding : keyBindings) {
             ClientRegistry.registerKeyBinding(keyBinding);
         }
@@ -144,34 +143,45 @@ public class Diana {
         if (mc.getCurrentServerData() == null) return;
         if (mc.getCurrentServerData().serverIP.toLowerCase().contains("hypixel.")) {
             event.manager.channel().pipeline().addBefore("packet_handler", "diana_packet_handler", new PacketHandler());
-            new Thread(() -> {
-                try {
-                    while (mc.thePlayer == null) {
-                        Thread.sleep(100);
-                    }
-                    Thread.sleep(1000);
+            updateThread();
+        }
+    }
 
-                    URL url = new URL("https://api.github.com/repos/Doppelclick/Diana/releases/latest");
-                    URLConnection request = url.openConnection();
-                    request.connect();
-                    JsonParser json = new JsonParser();
-                    JsonObject latestRelease = json.parse(new InputStreamReader((InputStream) request.getContent())).getAsJsonObject();
-
-                    String latestTag = latestRelease.get("tag_name").getAsString();
-                    DefaultArtifactVersion currentVersion = new DefaultArtifactVersion(V);
-                    DefaultArtifactVersion latestVersion = new DefaultArtifactVersion(latestTag.substring(1));
-
-                    if (currentVersion.compareTo(latestVersion) < 0) {
-                        String releaseURL = "https://github.com/Doppelclick/Diana/releases/latest";
-                        ChatComponentText update = new ChatComponentText("§l§2  [UPDATE]  ");
-                        update.setChatStyle(update.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, releaseURL)));
-                        mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana]§c Solver is outdated. Please update to " + latestTag + ".\n").appendSibling(update));
-                    }
-                } catch (Exception e) {
-                    mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §cAn error has occurred connecting to github"));
-                    e.printStackTrace();
+    void updateThread() {
+        if (mc.thePlayer == null) {
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    updateThread();
                 }
-            }).start();
+            }, 100);
+        } else {
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+                        URL url = new URL("https://api.github.com/repos/Doppelclick/Diana/releases/latest");
+                        URLConnection request = url.openConnection();
+                        request.connect();
+                        JsonParser json = new JsonParser();
+                        JsonObject latestRelease = json.parse(new InputStreamReader((InputStream) request.getContent())).getAsJsonObject();
+
+                        String latestTag = latestRelease.get("tag_name").getAsString();
+                        DefaultArtifactVersion currentVersion = new DefaultArtifactVersion(V);
+                        DefaultArtifactVersion latestVersion = new DefaultArtifactVersion(latestTag.substring(1));
+
+                        if (currentVersion.compareTo(latestVersion) < 0) {
+                            String releaseURL = "https://github.com/Doppelclick/Diana/releases/latest";
+                            ChatComponentText update = new ChatComponentText("§l§2  [UPDATE]  ");
+                            update.setChatStyle(update.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, releaseURL)));
+                            mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana]§c Solver is outdated. Please update to " + latestTag + ".\n").appendSibling(update));
+                        }
+                    } catch (Exception e) {
+                        mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §cAn error has occurred connecting to github"));
+                        e.printStackTrace();
+                    }
+                }
+            }, 1000);
         }
     }
 
