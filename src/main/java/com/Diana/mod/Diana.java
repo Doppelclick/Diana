@@ -68,7 +68,7 @@ public class Diana {
     public static HashMap<Integer, Color> waypointColors = new HashMap<Integer, Color>(){{
        put(1, Color.GREEN);
        put(2, Color.RED);
-       put(3, Color.GREEN);
+       put(3, Color.WHITE);
        put(4, Color.YELLOW);
     }};
 
@@ -236,16 +236,6 @@ public class Diana {
                 }
             }
         }
-        //else if (event.action == PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) {
-        //    if (player.getHeldItem() != null) {
-        //        if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade") && mc.theWorld.getBlockState(event.pos).getBlock().equals(Blocks.grass)) {
-        //                dugburrow = event.pos;
-        //            }
-        //        }
-        //}
-        //else if (event.action == PlayerInteractEvent.Action.LEFT_CLICK_BLOCK) {
-        //    dugburrow = event.pos;
-        //}
     }
 
     @SubscribeEvent
@@ -263,20 +253,12 @@ public class Diana {
             }
             if (arrow && arrowStart != null && arrowDir != null && particles.size() > 3) {
                 intercept();
-                arrow=false;
+                arrow = false;
             }
         }
     }
 
-    //@SubscribeEvent
-    //void playerUpdate(LivingEvent.LivingUpdateEvent event) {
-    //    if (!toggle) return;
-    //    if (event.entity.equals(mc.thePlayer) && burrow != null && guess) {
-    //        if (event.entity.getDistanceSq(new BlockPos(burrow)) < 15) resetData();
-    //    }
-    //}
-
-    @SubscribeEvent
+    @SubscribeEvent(receiveCanceled = true, priority = EventPriority.HIGH)
     void sound(PlaySoundEvent event) {
         if (!toggle) return;
         if (event.name.equals("note.harp") && guess && echo) {
@@ -306,13 +288,13 @@ public class Diana {
                     arrow = false;
                 }
             }
-            //else if (proximity && player.getHeldItem() != null) {
-            //    if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
-            //        particleBurrow burrow1 = new particleBurrow();
-            //        burrow1.setType(particle.getParticleType(), particle.getParticleCount(), particle.getParticleSpeed(), particle.getXOffset(), particle.getYOffset(), particle.getZOffset());
-            //        particleBurrows.put(new BlockPos(particle.getXCoordinate(), particle.getYCoordinate(), particle.getZCoordinate()), burrow1);
-            //    }
-            //}
+            else if (proximity && player.getHeldItem() != null) {
+                if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
+                    particleBurrow burrow1 = new particleBurrow();
+                    burrow1.setType(particle.getParticleType(), particle.getParticleCount(), particle.getParticleSpeed(), particle.getXOffset(), particle.getYOffset(), particle.getZOffset());
+                    particleBurrows.put(new BlockPos(particle.getXCoordinate(), particle.getYCoordinate(), particle.getZCoordinate()), burrow1);
+                }
+            }
         }
     }
 
@@ -344,6 +326,7 @@ public class Diana {
         }
         burrow = new Vec3(x, y, z);
         if (messages &! echo) mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §r[" + Math.round(burrow.xCoord) + "," + Math.round(burrow.yCoord) + "," + Math.round(burrow.zCoord) + "] " + (int)Math.round(distance)));
+        if (!oldparticles.isEmpty() || (arrowStart != null && arrowDir != null)) intercept();
     }
 
     double total(Vec3 v) {
@@ -417,7 +400,7 @@ public class Diana {
         if (guess && guesspos != null) {
             float sc = 1;
             if (selected != null) if (burrow.equals(selected)) sc = scale;
-            renderBeacon(event.partialTicks, "§bGuess (" + lastdug + "/4)", sc, guesspos, waypointColors.get(lastdug));
+            renderBeacon(event.partialTicks, "§l§bGuess (" + lastdug + "/4)", sc, guesspos, waypointColors.get(lastdug));
         }
         //if (proximity &! particleBurrows.isEmpty()) {
         //    for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
@@ -451,10 +434,11 @@ public class Diana {
 
         GlStateManager.disableDepth();
         GlStateManager.disableCull();
+        if (distSq > 35) if (beam) WaypointUtils.renderBeaconBeam(x, y + scale, z, color.getRGB(), 0.25f, partialTicks);
+        else scale = 1;
         if (block && frustum.isBoxInFrustum(pos.xCoord, pos.yCoord, pos.zCoord, pos.xCoord + 1, pos.yCoord + 1, pos.zCoord + 1))
             WaypointUtils.drawFilledBoundingBox(new AxisAlignedBB(x - scale + 1, y - scale + 1, z - scale + 1, x + scale, y + scale, z + scale), color, 0.4f);
         GlStateManager.disableTexture2D();
-        if (beam && distSq > 25) WaypointUtils.renderBeaconBeam(x, y + scale, z, color.getRGB(), 0.25f, partialTicks);
         if (text) WaypointUtils.renderWaypointText(info, pos.addVector(0, scale,0), partialTicks, scale);
         GlStateManager.disableLighting();
         GlStateManager.enableTexture2D();
@@ -480,7 +464,7 @@ public class Diana {
             String name = "unused";
             BlockPos pos = new BlockPos(player.getPositionVector());
             for (Map.Entry<BlockPos, String> warp : warps.entrySet()) {
-                if (new BlockPos(selected).distanceSq(pos) > new BlockPos(selected).distanceSq(warp.getKey()) &! warp.getValue().equals("unused")) {
+                if (new BlockPos(selected).distanceSq(pos) * (pos.equals(new BlockPos(player.getPositionVector())) ? 0.9D : 1) > new BlockPos(selected).distanceSq(warp.getKey()) &! warp.getValue().equals("unused")) {
                     name = warp.getValue();
                     pos = warp.getKey();
                 }
@@ -510,7 +494,7 @@ public class Diana {
                     return;
                 }
             }
-        } if (message.contains("§r§eYou dug out a Griffin Burrow! §r§7(")) {
+        } if (message.contains("§r§eYou dug out a Griffin Burrow! §r§7(") || message.contains("&r&eYou finished the Griffin burrow chain! &r&7(4/4)")) {
             resetRender();
             arrow = true;
             arrowStart = null;
@@ -542,25 +526,25 @@ public class Diana {
         double lowp = Diana.getPitch(playerp, burrow.addVector(0.5,1,0.5));
         double topp = Diana.getPitch(playerp, new Vec3(burrow.xCoord + 0.5, 255, burrow.zCoord + 0.5));
         double distance = 129600;
-        if (lowery-3 < yaw && yaw < highery+3 && pitch < lowp + 4 && pitch > topp) distance = (highery - yaw) * (lowp - pitch);
+        if (lowery-3 < yaw && yaw < highery + 3 && pitch < lowp + 4 && pitch > topp) distance = (highery - yaw) * (lowp - pitch);
         return distance;
     }
 
     public static void intercept() {
         EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
-        if (player==null) return;
+        if (player == null || particles.size() < 2) return;
         Vec3 playerp = player.getPositionVector();
 
         Vec3 p1 = particles.get(0);
         Vec3 p2 = particles.get(particles.size() - 1).subtract(p1);
         Vec3 a1;
         Vec3 a2;
-        if (arrowStart!=null && arrowDir!=null) {
+        if (arrowStart != null && arrowDir != null) {
             a1 = arrowStart;
             a2 = arrowDir;
         } else if (!oldparticles.isEmpty() && oldparticles.size() > 3) {
             a1 = oldparticles.get(0);
-            a2 = oldparticles.get(oldparticles.size()-1).subtract(a1);
+            a2 = oldparticles.get(oldparticles.size() - 1).subtract(a1);
         } else return;
 
         /*
@@ -584,19 +568,23 @@ public class Diana {
             if (hubdata.get((int) Math.round(intercept.xCoord)).containsKey((int) Math.round(intercept.zCoord))) {
                 intercept.addVector(0, hubdata.get((int) Math.round(intercept.xCoord)).get((int) Math.round(intercept.zCoord)), 0);
             }
-        } if (intercept.yCoord==0) intercept.addVector(0, burrow.yCoord, 0);
-
-        Vec3 relguess = burrow.subtract(playerp);
-        Vec3 relintercept = intercept.subtract(playerp);
-        if ((Math.signum(relguess.xCoord) == Math.signum(relintercept.xCoord) && Math.signum(relguess.zCoord) == Math.signum(relintercept.zCoord) && burrow.distanceTo(intercept) < 20) || playerp.distanceTo(intercept) < 15) {
+        }
+        if (burrow == null) {
+            if (intercept.yCoord == 0) intercept.addVector(0,60,0);
             burrow = intercept;
+        } else {
+            if (intercept.yCoord == 0) intercept.addVector(0, burrow.yCoord, 0);
+
+            Vec3 relguess = burrow.subtract(playerp);
+            Vec3 relintercept = intercept.subtract(playerp);
+            if ((Math.signum(relguess.xCoord) == Math.signum(relintercept.xCoord) && Math.signum(relguess.zCoord) == Math.signum(relintercept.zCoord) && burrow.distanceTo(intercept) < 20) || playerp.distanceTo(intercept) < 15) {
+                burrow = intercept;
+            }
         }
     }
 
     static void resetData() {
-        lastdug = 1;
         echo = false;
-        burrow = null;
         pitch = new ArrayList<>();
         sounds = new ArrayList<>();
         particles = new ArrayList<>();
@@ -620,6 +608,8 @@ public class Diana {
         arrowStart = null;
         arrowDir = null;
         oldparticles = new ArrayList<>();
+        lastdug = 1;
+        burrow = null;
         resetData();
         resetRender();
     }
