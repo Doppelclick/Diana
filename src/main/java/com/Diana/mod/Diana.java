@@ -54,7 +54,7 @@ import java.util.Timer;
 @Mod(modid = Diana.Name, version = Diana.V)
 public class Diana {
     public static final String Name = "Diana";
-    public static final String V = "0.1.4";
+    public static final String V = "0.1.5";
     public static KeyBinding[] keyBindings = new KeyBinding[1];
     public static HashMap<BlockPos, String> warps = new HashMap<BlockPos, String>(){{
         put(new BlockPos(-3,69,-70), "hub");
@@ -70,6 +70,12 @@ public class Diana {
        put(2, Color.RED);
        put(3, Color.WHITE);
        put(4, Color.YELLOW);
+    }};
+    public static HashMap<Integer, String> waypointNames = new HashMap<Integer, String>(){{
+        put(1, "§aStart");
+        put(2, "§cMob");
+        put(3, "§fMob/Treasure");
+        put(4, "§eTreasure");
     }};
 
     public static boolean toggle = false;
@@ -97,6 +103,7 @@ public class Diana {
     static HashMap<BlockPos, particleBurrow> particleBurrows = new HashMap<>();
     public static int lastdug = 1;
     public static BlockPos dugburrow = null;
+    public static List<BlockPos> foundBurrows = new ArrayList<>();
     public static Vec3 selected = null;
     static float scale = 1;
     static long scaleTime = 0;
@@ -288,18 +295,18 @@ public class Diana {
                     arrow = false;
                 }
             }
-            else if (proximity && player.getHeldItem() != null) {
+            else if (proximity && player.getHeldItem() != null &! foundBurrows.contains(new BlockPos(pos).down())) {
                 if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
                     particleBurrow burrow1 = new particleBurrow();
                     burrow1.setType(particle.getParticleType(), particle.getParticleCount(), particle.getParticleSpeed(), particle.getXOffset(), particle.getYOffset(), particle.getZOffset());
-                    particleBurrows.put(new BlockPos(particle.getXCoordinate(), particle.getYCoordinate(), particle.getZCoordinate()), burrow1);
+                    if (burrow1.type > -1) particleBurrows.put(new BlockPos(pos).down(), burrow1);
                 }
             }
         }
     }
 
     void calcBurrow() {
-        if (pitch.size()<3 || particles.size()<3 || sounds.size()<3) return;
+        if (pitch.size() < 3 || particles.size() < 3 || sounds.size() < 3) return;
 
         float all = 0;
         for (int i = 1; i < pitch.size(); i++) {
@@ -372,15 +379,15 @@ public class Diana {
                 selected = burrow;
             }
         }
-        //if (proximity &! particleBurrows.isEmpty()) {
-        //    for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
-        //        double dist = distanceTo(new Vec3(burrow.getKey()), player);
-        //        if (dist < distance) {
-        //            distance = dist;
-        //            selected = new Vec3(burrow.getKey());
-        //        }
-        //    }
-        //}
+        if (proximity &! particleBurrows.isEmpty()) {
+            for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
+                double dist = distanceTo(new Vec3(burrow.getKey()), player);
+                if (dist < distance) {
+                    distance = dist;
+                    selected = new Vec3(burrow.getKey());
+                }
+            }
+        }
         if (selected != null) {
             if (distance == 129600) {
                 scale = 1;
@@ -400,15 +407,15 @@ public class Diana {
         if (guess && guesspos != null) {
             float sc = 1;
             if (selected != null) if (burrow.equals(selected)) sc = scale;
-            renderBeacon(event.partialTicks, "§l§bGuess (" + lastdug + "/4)", sc, guesspos, waypointColors.get(lastdug));
+            renderBeacon(event.partialTicks, "§l§bGuess " + waypointNames.get(lastdug) + " (" + lastdug + ")", sc, guesspos, waypointColors.get(lastdug));
         }
-        //if (proximity &! particleBurrows.isEmpty()) {
-        //    for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
-        //        float sc = 1;
-        //        if (selected != null) if (burrow.getKey().equals(new BlockPos(selected))) sc = scale;
-        //        renderBeacon(event.partialTicks, "(" + burrow.getValue().type + "/4)", sc, new Vec3(burrow.getKey()), waypointColors.get(burrow.getValue().type));
-        //    }
-        //}
+        if (proximity &! particleBurrows.isEmpty()) {
+            for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
+                float sc = 1;
+                if (selected != null) if (burrow.getKey().equals(new BlockPos(selected))) sc = scale;
+                renderBeacon(event.partialTicks, waypointNames.get(burrow.getValue().type) + " (" + (burrow.getValue().type == 3 ? "2/" : "") + burrow.getValue().type + ")", sc, new Vec3(burrow.getKey()), waypointColors.get(burrow.getValue().type));
+            }
+        }
     }
 
     public static double getYaw(Vec3 playerp, Vec3 point) { //horizontal
@@ -434,8 +441,9 @@ public class Diana {
 
         GlStateManager.disableDepth();
         GlStateManager.disableCull();
-        if (distSq > 35) if (beam) WaypointUtils.renderBeaconBeam(x, y + scale, z, color.getRGB(), 0.25f, partialTicks);
-        else scale = 1;
+        if (distSq > 35) {
+            if (beam) WaypointUtils.renderBeaconBeam(x, y + scale, z, color.getRGB(), 0.25f, partialTicks);
+        } else scale = 1;
         if (block && frustum.isBoxInFrustum(pos.xCoord, pos.yCoord, pos.zCoord, pos.xCoord + 1, pos.yCoord + 1, pos.zCoord + 1))
             WaypointUtils.drawFilledBoundingBox(new AxisAlignedBB(x - scale + 1, y - scale + 1, z - scale + 1, x + scale, y + scale, z + scale), color, 0.4f);
         GlStateManager.disableTexture2D();
@@ -447,12 +455,22 @@ public class Diana {
     }
 
     static class particleBurrow {
-        int type = 0; //1 mob, 2 treasure, 3 footsteps, 4 enchants
+        int type = -1; //1 start, 2 treasure, 3 footsteps, 4 enchants
+        //from Skytils
         void setType(EnumParticleTypes particle, int count, float speed, float xOffset, float yOffset, float zOffset) {
-            if (particle == EnumParticleTypes.CRIT && count == 3 && speed == 0.01f && xOffset == 0.5f && yOffset == 0.1f && zOffset == 0.5f) this.type=1;
-            else if (particle == EnumParticleTypes.DRIP_LAVA && count == 2 && speed == 0.01f && xOffset == 0.35f && yOffset == 0.1f && zOffset == 0.35f) this.type=2;
-            else if (particle == EnumParticleTypes.FOOTSTEP && count == 1 && speed == 0.0f && xOffset == 0.05f && yOffset == 0.0f && zOffset == 0.05f) this.type=3;
-            else if(particle == EnumParticleTypes.ENCHANTMENT_TABLE && count == 5 && speed == 0.05f && xOffset == 0.5f && yOffset == 0.4f && zOffset == 0.5f) this.type=4;
+            if (particle == EnumParticleTypes.CRIT_MAGIC && count == 4 && speed == 0.01f && xOffset == 0.5f && yOffset == 0.1f && zOffset == 0.5f) {
+                this.type = 1;
+            }
+            else if (particle == EnumParticleTypes.CRIT && count == 3 && speed == 0.01f && xOffset == 0.5f && yOffset == 0.1f && zOffset == 0.5f) {
+                this.type = 2;
+            }
+            else if (particle == EnumParticleTypes.DRIP_LAVA && count == 2 && speed == 0.01f && xOffset == 0.35f && yOffset == 0.1f && zOffset == 0.35f) {
+                this.type = 4;
+            }
+            else if ((particle == EnumParticleTypes.FOOTSTEP && count == 1 && speed == 0.0f && xOffset == 0.05f && yOffset == 0.0f && zOffset == 0.05f) ||
+                    (particle == EnumParticleTypes.ENCHANTMENT_TABLE && count == 5 && speed == 0.05f && xOffset == 0.5f && yOffset == 0.4f && zOffset == 0.5f)) {
+                this.type = 3;
+            }
         }
     }
 
@@ -494,7 +512,7 @@ public class Diana {
                     return;
                 }
             }
-        } if (message.contains("§r§eYou dug out a Griffin Burrow! §r§7(") || message.contains("&r&eYou finished the Griffin burrow chain! &r&7(4/4)")) {
+        } if (message.contains("§r§eYou dug out a Griffin Burrow! §r§7(") || message.contains("§r§eYou finished the Griffin burrow chain! §r§7(4/4)")) {
             resetRender();
             arrow = true;
             arrowStart = null;
@@ -502,11 +520,11 @@ public class Diana {
             oldparticles = new ArrayList<>();
             if (dugburrow != null) {
                 boolean removed = false;
-                if (particleBurrows.containsKey(dugburrow)) {
-                    particleBurrows.remove(dugburrow);
+                if (particleBurrows.remove(dugburrow) != null) {
                     removed = true;
+                    foundBurrows.add(dugburrow);
                 }
-                if (burrow.squareDistanceTo(new Vec3(dugburrow)) < 10) {
+                if (burrow.squareDistanceTo(new Vec3(dugburrow)) < 30) {
                     removed = true;
                     burrow = null;
                 }
@@ -589,7 +607,6 @@ public class Diana {
         sounds = new ArrayList<>();
         particles = new ArrayList<>();
         clicked = 0;
-        particleBurrows = new HashMap<>();
         dugburrow = null;
         selected = null;
     }
@@ -610,6 +627,8 @@ public class Diana {
         oldparticles = new ArrayList<>();
         lastdug = 1;
         burrow = null;
+        particleBurrows = new HashMap<>();
+        foundBurrows = new ArrayList<>();
         resetData();
         resetRender();
     }

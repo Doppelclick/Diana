@@ -16,7 +16,7 @@ apply plugin: "java"
 apply plugin: "net.minecraftforge.gradle.forge"
 apply plugin: "com.github.johnrengelman.shadow"
 
-version = "0.1.4"
+version = "0.1.5"
 group = "com.Diana"
 archivesBaseName = "Diana"
 

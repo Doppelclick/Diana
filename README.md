@@ -20,7 +20,7 @@ The main command is /Diana
 [![Discord](https://img.shields.io/badge/Discord-Doppelclick%235993-blue?style=for-the-badge&logo=appveyor)](https://discord.com/channels/@me)
 
 ### Credits:
-Took a lot of stuff from DungeonRooms (partly from NEU), the calculation from Soopy (it tested it to be the most accurate), the Packet Handling from Luna
+Took a lot of stuff from DungeonRooms (partly from NEU), the calculation from Soopy (it tested it to be the most accurate), the Packet Handling from Luna, proximity values from Skytils
 
 ### Download:
 <p align="left">
