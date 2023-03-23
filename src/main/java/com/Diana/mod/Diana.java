@@ -200,9 +200,10 @@ public class Diana {
         if (event.entity instanceof EntityArmorStand) {
             EntityArmorStand e = (EntityArmorStand) event.entity;
             if (e.getDisplayName().getUnformattedText().contains("Exalted Minos Inquisitor")) {
-                Vec3 distance = e.getPositionVector().subtract(playerPos);
-                if (Math.abs(distance.xCoord) < 10 && Math.abs(distance.yCoord) < 10 && Math.abs(distance.zCoord) < 10) {
-                    //todo: idk inq waypoint and chat message
+                double distance = e.getPositionVector().distanceTo(playerPos);
+                if (distance < 1500) {
+                    BlockPos pos = new BlockPos(e.getPositionVector());
+                    mc.thePlayer.sendChatMessage("/ac [Diana] Inquis! [" + pos.getX() + "," + pos.getY() + "," + pos.getZ() + "]");
                 }
             }
         }
@@ -410,7 +411,7 @@ public class Diana {
             renderBeacon(event.partialTicks, "§l§bGuess " + waypointNames.get(lastdug) + " (" + lastdug + ")", sc, guesspos, waypointColors.get(lastdug));
         }
         if (proximity &! particleBurrows.isEmpty()) {
-            for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
+            for (Map.Entry<BlockPos, particleBurrow> burrow : new HashSet<>(particleBurrows.entrySet())) {
                 float sc = 1;
                 if (selected != null) if (burrow.getKey().equals(new BlockPos(selected))) sc = scale;
                 renderBeacon(event.partialTicks, waypointNames.get(burrow.getValue().type) + " (" + (burrow.getValue().type == 3 ? "2/" : "") + burrow.getValue().type + ")", sc, new Vec3(burrow.getKey()), waypointColors.get(burrow.getValue().type));
@@ -512,7 +513,7 @@ public class Diana {
                     return;
                 }
             }
-        } if (message.contains("§r§eYou dug out a Griffin Burrow! §r§7(") || message.contains("§r§eYou finished the Griffin burrow chain! §r§7(4/4)")) {
+        } if (message.contains("§r§eYou dug out a Griffin Burrow! §r§7(") || message.contains("§r§eYou finished the Griffin burrow chain!")) {
             resetRender();
             arrow = true;
             arrowStart = null;
@@ -531,6 +532,12 @@ public class Diana {
                 if (removed) dugburrow = null;
             }
             lastdug = Integer.parseInt(message.substring(message.indexOf("(") + 1, message.indexOf("(") + 2)) % 4 + 1;
+        }
+        if (message.contains("§r&§c ☠ §r§7You were killed by §r§2") && dugburrow != null) {
+            if (particleBurrows.remove(dugburrow) != null) {
+                foundBurrows.add(dugburrow);
+                dugburrow = null;
+            }
         }
     }
 
@@ -573,11 +580,13 @@ public class Diana {
         x = (b2 - b1) / (m1 - m2)
         y = m1 * x + b1  or into set 2
         */
+        if (a2.xCoord == 0 || p2.xCoord == 0) return; //cba to code something proper
 
         double pslope = p2.zCoord / p2.xCoord;
         double py = p1.zCoord - pslope * p1.xCoord;
         double aslope = a2.zCoord / a2.xCoord;
         double ay = a1.zCoord - aslope * a1.xCoord;
+        if (pslope - aslope == 0) pslope = 0.00001D;
         double x = (ay - py) / (pslope - aslope);
         double z = pslope * x + aslope;
 
