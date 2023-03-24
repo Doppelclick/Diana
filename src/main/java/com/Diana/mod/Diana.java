@@ -54,7 +54,7 @@ import java.util.Timer;
 @Mod(modid = Diana.Name, version = Diana.V)
 public class Diana {
     public static final String Name = "Diana";
-    public static final String V = "0.1.5";
+    public static final String V = "0.1.6";
     public static KeyBinding[] keyBindings = new KeyBinding[1];
     public static List<Warp> warps = new ArrayList<>(Arrays.asList(
             new Warp(new Vec3(-3,69,-70), "hub", true),
@@ -331,8 +331,7 @@ public class Diana {
                     arrowDir = dir;
                     arrow = false;
                 }
-            }
-            else if (proximity && player.getHeldItem() != null &! foundBurrows.contains(new BlockPos(pos).down())) {
+            } else if (proximity && player.getHeldItem() != null &! foundBurrows.contains(new BlockPos(pos).down())) {
                 if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
                     particleBurrow burrow1 = new particleBurrow();
                     burrow1.setType(particle.getParticleType(), particle.getParticleCount(), particle.getParticleSpeed(), particle.getXOffset(), particle.getYOffset(), particle.getZOffset());
