@@ -105,14 +105,9 @@ public class config {
         Diana.beam = getBoolean("render", "BeaconBeam");
         Diana.text = getBoolean("render", "BeaconText");
 
-        List<String> disabledWarps = new ArrayList<>();
-        if (!getBoolean("warps", "castle")) disabledWarps.add("castle");
-        if (!getBoolean("warps", "da")) disabledWarps.add("da");
-        if (!getBoolean("warps", "crypt")) disabledWarps.add("crypt");
-        if (!getBoolean("warps", "museum")) disabledWarps.add("museum");
-
-        for (Map.Entry<BlockPos, String> warp : Diana.warps.entrySet()) {
-            if (disabledWarps.contains(warp.getValue())) Diana.warps.put(warp.getKey(), "unused");
-        }
+        if (!getBoolean("warps", "castle")) Diana.Warp.set("castle", false);
+        if (!getBoolean("warps", "da")) Diana.Warp.set("da", false);
+        if (!getBoolean("warps", "crypt")) Diana.Warp.set("crypt", false);
+        if (!getBoolean("warps", "museum")) Diana.Warp.set("museum", false);
     }
 }

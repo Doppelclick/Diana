@@ -9,6 +9,8 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.Vec3;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class DianaCommand extends CommandBase {
@@ -19,7 +21,9 @@ public class DianaCommand extends CommandBase {
             + " /diana interpolation §7| Toggle interpolation for guess burrow§r\n"
             + " /diana proximity §7| Toggle burrow§r\n"
             + " /diana messages §7| Toggle messages§r\n"
-            + " /diana beacon §7[help, block, beam, text]§r";
+            + " /diana beacon §7[help, block, beam, text]§r\n"
+            + " /diana clear §7| Clear burrows§r";
+
 
     static String beaconHelp = "§3Diana Solver §rbeacon options\n"
             + " /diana beacon help §7| This message§r\n"
@@ -127,6 +131,15 @@ public class DianaCommand extends CommandBase {
                     } else {
                         player.addChatMessage(new ChatComponentText(beaconHelp));
                     }
+                    break;
+
+                case "clear":
+                    Diana.particleBurrows = new HashMap<>();
+                    break;
+
+                case "clearall":
+                    Diana.particleBurrows = new HashMap<>();
+                    Diana.foundBurrows = new ArrayList<>();
                     break;
 
                 default:

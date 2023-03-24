@@ -56,14 +56,13 @@ public class Diana {
     public static final String Name = "Diana";
     public static final String V = "0.1.5";
     public static KeyBinding[] keyBindings = new KeyBinding[1];
-    public static HashMap<BlockPos, String> warps = new HashMap<BlockPos, String>(){{
-        put(new BlockPos(-3,69,-70), "hub");
-        put(new BlockPos(-250,129,-45), "castle");
-        put(new BlockPos(91,74,173), "da");
-        put(new BlockPos(-162,61,-99), "crypt");
-        put(new BlockPos(-76,75,80), "museum");
-    }};
-    public static String lastwarp = "unused";
+    public static List<Warp> warps = new ArrayList<>(Arrays.asList(
+            new Warp(new Vec3(-3,69,-70), "hub", true),
+            new Warp(new Vec3(-250,129,-45), "castle", true),
+            new Warp(new Vec3(91,74,173), "da", true),
+            new Warp(new Vec3(-162,61,-99), "crypt", true),
+            new Warp(new Vec3(-76,75,80), "museum", true)));
+    public static String lastwarp = "undefined";
     static HashMap<Integer, HashMap<Integer, Integer>> hubdata = new HashMap<>();
     public static HashMap<Integer, Color> waypointColors = new HashMap<Integer, Color>(){{
        put(1, Color.GREEN);
@@ -100,7 +99,7 @@ public class Diana {
     public static Vec3 burrow = null;
     public static Vec3 lastburrow = null;
     public static Vec3 lastlastburrow = null;
-    static HashMap<BlockPos, particleBurrow> particleBurrows = new HashMap<>();
+    public static HashMap<BlockPos, particleBurrow> particleBurrows = new HashMap<>();
     public static int lastdug = 1;
     public static BlockPos dugburrow = null;
     public static List<BlockPos> foundBurrows = new ArrayList<>();
@@ -192,6 +191,37 @@ public class Diana {
         }
     }
 
+    public static class Warp {
+        Vec3 pos;
+        String name;
+        boolean enabled;
+        double distance = 9999;
+
+        public Warp(Vec3 p, String n, boolean e) {
+            this.pos = p;
+            this.name = n;
+            this.enabled = e;
+        }
+        public static void set(String name, boolean state) {
+            for (Warp warp : warps) {
+                if (warp.name.equals(name)) {
+                    warps.get(warps.indexOf(warp)).enabled = state;
+                    return;
+                }
+            }
+        }
+        public static Warp closest(Vec3 target, boolean check) {
+            Warp re = new Warp(null, null, false);
+            for (Warp warp : warps) {
+                if ((warp.enabled |! check) && target.distanceTo(warp.pos) < re.distance) {
+                    re = warp;
+                    re.distance = target.distanceTo(warp.pos);
+                }
+            }
+            return re;
+        }
+    }
+
     @SubscribeEvent
     void entity(EntityJoinWorldEvent event) {
         EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
@@ -201,9 +231,15 @@ public class Diana {
             EntityArmorStand e = (EntityArmorStand) event.entity;
             if (e.getDisplayName().getUnformattedText().contains("Exalted Minos Inquisitor")) {
                 double distance = e.getPositionVector().distanceTo(playerPos);
+
+                String warp = "nothing";
+                Warp w = Warp.closest(selected, false);
+                if (w.pos != null) {
+                    warp = w.name;
+                }
                 if (distance < 1500) {
                     BlockPos pos = new BlockPos(e.getPositionVector());
-                    mc.thePlayer.sendChatMessage("/ac [Diana] Inquis! [" + pos.getX() + "," + pos.getY() + "," + pos.getZ() + "]");
+                    mc.thePlayer.sendChatMessage("/ac [Diana] Inquis! [" + pos.getX() + "," + pos.getY() + "," + pos.getZ() + "] close to " + warp);
                 }
             }
         }
@@ -480,18 +516,14 @@ public class Diana {
         EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
         if (!toggle || player==null) return;
         if (keyBindings[0].isPressed() && selected != null) {
-            String name = "unused";
-            BlockPos pos = new BlockPos(player.getPositionVector());
-            for (Map.Entry<BlockPos, String> warp : warps.entrySet()) {
-                if (new BlockPos(selected).distanceSq(pos) * (pos.equals(new BlockPos(player.getPositionVector())) ? 0.9D : 1) > new BlockPos(selected).distanceSq(warp.getKey()) &! warp.getValue().equals("unused")) {
-                    name = warp.getValue();
-                    pos = warp.getKey();
+            Warp warp = Warp.closest(selected, true);
+
+            if (warp.pos != null) {
+                if (warp.distance * 1.1 < player.getPositionVector().distanceTo(selected)) {
+                    mc.thePlayer.sendChatMessage("/warp " + warp.name);
+                    if (messages) mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rWarped to " + warp.name));
+                    lastwarp = warp.name;
                 }
-            }
-            if (!name.equals("unused")) {
-                mc.thePlayer.sendChatMessage("/warp " + name);
-                if (messages) mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rWarped to " + name));
-                lastwarp = name;
             }
         }
     }
@@ -500,16 +532,18 @@ public class Diana {
     void chat(ClientChatReceivedEvent event) {
         if (!toggle) return;
         String message = event.message.getFormattedText();
-        if (message.contains("&r&cYou haven't unlocked this fast travel destination!&r") &! lastwarp.equals("unused")) {
+        if (message.contains("§r§cYou haven't unlocked this fast travel destination!§r") &! lastwarp.equals("undefined")) {
             if (lastwarp.equals("hub")) {
-                lastwarp = "unused";
+                lastwarp = "undefined";
                 return;
             }
-            for (Map.Entry<BlockPos, String> warp : warps.entrySet()) {
-                if (warp.getValue().equals(lastwarp)) {
-                    config.writeBooleanConfig("warps", lastwarp, false);
-                    lastwarp = "unused";
-                    warps.put(warp.getKey(), lastwarp);
+            for (Warp warp : warps) {
+                if (warp.name.equals(lastwarp)) {
+                    if (warp.enabled) {
+                        config.writeBooleanConfig("warps", lastwarp, false);
+                        Warp.set(lastwarp, false);
+                        lastwarp = "undefined";
+                    }
                     return;
                 }
             }
