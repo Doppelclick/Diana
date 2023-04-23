@@ -74,16 +74,16 @@ public class config {
     }
 
     public static String understandMe(boolean c) {
-        return c?"§2On":"§4Off";
+        return (c?"§2On":"§4Off") + "§r";
     }
 
     public static void cfgreload() {
         init();
 
         if (!hasKey("toggles", "ModToggle")) writeBooleanConfig("toggles", "ModToggle", false);
-        if (!hasKey("toggles", "GuessBurrow")) writeBooleanConfig("toggles", "GuessBurrow", false);
+        if (!hasKey("toggles", "GuessBurrow")) writeBooleanConfig("toggles", "GuessBurrow", true);
         if (!hasKey("toggles", "Interpolation")) writeBooleanConfig("toggles", "Interpolation", true);
-        if (!hasKey("toggles", "BurrowProximity")) writeBooleanConfig("toggles", "BurrowProximity", false);
+        if (!hasKey("toggles", "BurrowProximity")) writeBooleanConfig("toggles", "BurrowProximity", true);
         if (!hasKey("toggles", "Messages")) writeBooleanConfig("toggles", "Messages", false);
 
         if (!hasKey("render", "BeaconBlock")) writeBooleanConfig("render", "BeaconBlock", true);

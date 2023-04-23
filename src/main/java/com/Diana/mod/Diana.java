@@ -15,8 +15,8 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.item.EntityArmorStand;
 import net.minecraft.event.ClickEvent;
+import net.minecraft.init.Blocks;
 import net.minecraft.network.play.client.C07PacketPlayerDigging;
 import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
 import net.minecraft.network.play.server.S2APacketParticles;
@@ -50,11 +50,14 @@ import java.net.URLConnection;
 import java.util.*;
 import java.util.List;
 import java.util.Timer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Mod(modid = Diana.Name, version = Diana.V)
 public class Diana {
     public static final String Name = "Diana";
     public static final String V = "0.1.6";
+    public static String chatTitle = "§3[Diana] §r";
     public static KeyBinding[] keyBindings = new KeyBinding[1];
     public static List<Warp> warps = new ArrayList<>(Arrays.asList(
             new Warp(new Vec3(-3,69,-70), "hub", true),
@@ -78,15 +81,19 @@ public class Diana {
     }};
 
     public static boolean toggle = false;
-    public static boolean guess = false;
+    public static boolean guess = true;
     public static boolean interpolation = true;
-    public static boolean proximity = false;
+    public static boolean proximity = true;
     public static boolean messages = false;
-    public static boolean block = false;
+    public static boolean block = true;
     public static boolean beam = true;
     public static boolean text = true;
+    public static boolean sendInqToAll = true;
+    public static boolean receiveInqFromAll = true;
 
     public static Minecraft mc = Minecraft.getMinecraft();
+    public static boolean inParty = false;
+    public static List<String> partyMembers = new ArrayList<>();
     static boolean echo = false;
     static List<Float> pitch = new ArrayList<>();
     static List<Vec3> sounds = new ArrayList<>();
@@ -99,9 +106,9 @@ public class Diana {
     public static Vec3 burrow = null;
     public static Vec3 lastburrow = null;
     public static Vec3 lastlastburrow = null;
-    public static HashMap<BlockPos, particleBurrow> particleBurrows = new HashMap<>();
+    public static HashMap<BlockPos, Waypoint> waypoints = new HashMap<>();
     public static int lastdug = 1;
-    public static BlockPos dugburrow = null;
+    public static List<BlockPos> dugburrow = new ArrayList<>();
     public static List<BlockPos> foundBurrows = new ArrayList<>();
     public static Vec3 selected = null;
     static float scale = 1;
@@ -180,10 +187,10 @@ public class Diana {
                             String releaseURL = "https://github.com/Doppelclick/Diana/releases/latest";
                             ChatComponentText update = new ChatComponentText("§l§2  [UPDATE]  ");
                             update.setChatStyle(update.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, releaseURL)));
-                            mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana]§c Solver is outdated. Please update to " + latestTag + ".\n").appendSibling(update));
+                            mc.thePlayer.addChatMessage(new ChatComponentText(Diana.chatTitle + "§cSolver is outdated. Please update to " + latestTag + ".\n").appendSibling(update));
                         }
                     } catch (Exception e) {
-                        mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §cAn error has occurred connecting to github"));
+                        mc.thePlayer.addChatMessage(new ChatComponentText(Diana.chatTitle + "§cAn error has occurred connecting to github"));
                         e.printStackTrace();
                     }
                 }
@@ -224,50 +231,53 @@ public class Diana {
 
     @SubscribeEvent
     void entity(EntityJoinWorldEvent event) {
+        Entity e = event.entity;
+        if (e == null |! toggle) return;
         EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
         if (player == null) return;
-        Vec3 playerPos = player.getPositionVector();
-        if (event.entity instanceof EntityArmorStand) {
-            EntityArmorStand e = (EntityArmorStand) event.entity;
-            if (e.getDisplayName().getUnformattedText().contains("Exalted Minos Inquisitor")) {
-                double distance = e.getPositionVector().distanceTo(playerPos);
-
+        if (e.getName().toLowerCase().contains("inquis") &! e.getName().contains("'")) {
+            BlockPos pos = new BlockPos(e.getPositionVector()).down();
+            if (maxDistance(player.getPositionVector(), e.getPositionVector()) < 10) {
                 String warp = "nothing";
                 Warp w = Warp.closest(selected, false);
                 if (w.pos != null) {
                     warp = w.name;
                 }
-                if (distance < 1500) {
-                    BlockPos pos = new BlockPos(e.getPositionVector());
-                    mc.thePlayer.sendChatMessage("/ac [Diana] Inquis! [" + pos.getX() + "," + pos.getY() + "," + pos.getZ() + "] close to " + warp);
-                }
+                mc.thePlayer.sendChatMessage("/ac [Diana] Inquis! [" + pos.getX() + "," + pos.getY() + "," + pos.getZ() + "] close to " + warp);
+                sendInquisData(e.getPositionVector());
             }
+        }
+    }
+
+    void sendInquisData(Vec3 pos) {
+        if (sendInqToAll || inParty) {
+
         }
     }
 
     @SubscribeEvent
     void sendPacket(PacketEvent.SendEvent event) {
         EntityPlayerSP player = mc.thePlayer;
-        if (player == null) return;
-        if (event.packet instanceof C07PacketPlayerDigging) {
-            C07PacketPlayerDigging packet = (C07PacketPlayerDigging) event.packet;
-            if (packet.getStatus().equals(C07PacketPlayerDigging.Action.START_DESTROY_BLOCK)) {
-                dugburrow = packet.getPosition();
-            }
-        } else if (event.packet instanceof C08PacketPlayerBlockPlacement) {
-            if (player.getHeldItem() != null) {
-                if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
-                    dugburrow = ((C08PacketPlayerBlockPlacement) event.packet).getPosition();
+        if (player == null |! toggle) return;
+        if (player.getHeldItem() == null) return;
+        if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
+            if (event.packet instanceof C07PacketPlayerDigging) {
+                C07PacketPlayerDigging packet = (C07PacketPlayerDigging) event.packet;
+                if (packet.getStatus().equals(C07PacketPlayerDigging.Action.START_DESTROY_BLOCK)) {
+                    dugburrow.add(packet.getPosition());
                 }
+            } else if (event.packet instanceof C08PacketPlayerBlockPlacement) {
+                C08PacketPlayerBlockPlacement packet = (C08PacketPlayerBlockPlacement) event.packet;
+                if (!packet.getPosition().equals(new BlockPos(-1,-1,-1)))
+                    dugburrow.add(packet.getPosition());
             }
         }
     }
 
     @SubscribeEvent
     void interact(PlayerInteractEvent event) {
-        if (!toggle) return;
         EntityPlayerSP player = mc.thePlayer;
-        if (player == null) return;
+        if (!toggle || player == null) return;
         if (event.action == PlayerInteractEvent.Action.RIGHT_CLICK_AIR && guess) {
             if (System.currentTimeMillis() > clicked + 2000) {
                 if (player.getHeldItem() != null) {
@@ -279,6 +289,12 @@ public class Diana {
                     }
                 }
             }
+        } else if (event.action == PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK || event.action == PlayerInteractEvent.Action.LEFT_CLICK_BLOCK) {
+            if (player.getHeldItem() != null) {
+                if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade") && mc.theWorld.getBlockState(event.pos).getBlock().equals(Blocks.grass)) {
+                        dugburrow.add(event.pos);
+                    }
+                }
         }
     }
 
@@ -331,11 +347,11 @@ public class Diana {
                     arrowDir = dir;
                     arrow = false;
                 }
-            } else if (proximity && player.getHeldItem() != null &! foundBurrows.contains(new BlockPos(pos).down())) {
+            } else if (proximity && player.getHeldItem() != null &! foundBurrows.contains(new BlockPos(pos).down()) &! dugburrow.contains(new BlockPos(pos).down())) {
                 if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
-                    particleBurrow burrow1 = new particleBurrow();
+                    ParticleBurrowWaypoint burrow1 = new ParticleBurrowWaypoint();
                     burrow1.setType(particle.getParticleType(), particle.getParticleCount(), particle.getParticleSpeed(), particle.getXOffset(), particle.getYOffset(), particle.getZOffset());
-                    if (burrow1.type > -1) particleBurrows.put(new BlockPos(pos).down(), burrow1);
+                    if (burrow1.type > -1) waypoints.put(new BlockPos(pos).down(), burrow1);
                 }
             }
         }
@@ -351,9 +367,9 @@ public class Diana {
         all /= pitch.size() - 1;
 
         Vec3 first = particles.get(0);
-        Vec3 last2 = particles.get(particles.size()-2);
-        Vec3 last = particles.get(particles.size()-1);
-        Vec3 lastsound = sounds.get(sounds.size()-1);
+        Vec3 last2 = particles.get(particles.size() - 2);
+        Vec3 last = particles.get(particles.size() - 1);
+        Vec3 lastsound = sounds.get(sounds.size() - 1);
 
         double lineDist = Math.sqrt(total(last2.subtract(last)));
         double distance = (Math.E / all - Math.sqrt(total(first.subtract(lastsound))));
@@ -368,7 +384,7 @@ public class Diana {
             }
         }
         burrow = new Vec3(x, y, z);
-        if (messages &! echo) mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §r[" + Math.round(burrow.xCoord) + "," + Math.round(burrow.yCoord) + "," + Math.round(burrow.zCoord) + "] " + (int)Math.round(distance)));
+        if (messages &! echo) mc.thePlayer.addChatMessage(new ChatComponentText(Diana.chatTitle + "[" + Math.round(burrow.xCoord) + "," + Math.round(burrow.yCoord) + "," + Math.round(burrow.zCoord) + "] " + (int)Math.round(distance)));
         if (!oldparticles.isEmpty() || (arrowStart != null && arrowDir != null)) intercept();
     }
 
@@ -393,8 +409,8 @@ public class Diana {
         Vec3 guesspos = null;
         if (guess && burrow != null) {
             if (interpolation) {
-                if (lastlastburrow == null) lastlastburrow = burrow;
                 if (lastburrow == null) lastburrow = burrow;
+                if (lastlastburrow == null) lastlastburrow = lastburrow;
                 double interpFactor = Math.max(0, Math.min(1, Math.round((System.currentTimeMillis() - interp) * 100f) / 100f / (interp - lastinterp)));
                 double x = lastlastburrow.xCoord + (lastburrow.xCoord - lastlastburrow.xCoord) * interpFactor;
                 double y = lastlastburrow.yCoord + (lastburrow.yCoord - lastlastburrow.yCoord) * interpFactor;
@@ -415,8 +431,8 @@ public class Diana {
                 selected = burrow;
             }
         }
-        if (proximity &! particleBurrows.isEmpty()) {
-            for (Map.Entry<BlockPos, particleBurrow> burrow : particleBurrows.entrySet()) {
+        if (proximity) {
+            for (Map.Entry<BlockPos, Waypoint> burrow : waypoints.entrySet()) {
                 double dist = distanceTo(new Vec3(burrow.getKey()), player);
                 if (dist < distance) {
                     distance = dist;
@@ -445,11 +461,23 @@ public class Diana {
             if (selected != null) if (burrow.equals(selected)) sc = scale;
             renderBeacon(event.partialTicks, "§l§bGuess " + waypointNames.get(lastdug) + " (" + lastdug + ")", sc, guesspos, waypointColors.get(lastdug));
         }
-        if (proximity &! particleBurrows.isEmpty()) {
-            for (Map.Entry<BlockPos, particleBurrow> burrow : new HashSet<>(particleBurrows.entrySet())) {
+        if (proximity &! waypoints.isEmpty()) {
+            for (Map.Entry<BlockPos, Waypoint> burrow : new HashSet<>(waypoints.entrySet())) {
                 float sc = 1;
                 if (selected != null) if (burrow.getKey().equals(new BlockPos(selected))) sc = scale;
-                renderBeacon(event.partialTicks, waypointNames.get(burrow.getValue().type) + " (" + (burrow.getValue().type == 3 ? "2/" : "") + burrow.getValue().type + ")", sc, new Vec3(burrow.getKey()), waypointColors.get(burrow.getValue().type));
+                String display = "";
+                Color color = Color.BLACK;
+                if (burrow.getValue() instanceof ParticleBurrowWaypoint) {
+                    ParticleBurrowWaypoint b = (ParticleBurrowWaypoint) burrow.getValue();
+                    display = waypointNames.get(b.type) + " (" + (b.type == 3 ? "2/" : "") + b.type + ")";
+                    color = waypointColors.get(b.type);
+                } else if (burrow.getValue() instanceof InquisWaypoint) {
+                    InquisWaypoint b = (InquisWaypoint) burrow.getValue();
+                    if (partyMembers.contains(b.player)) display = "§9";
+                    display = display + b.player + "§r's §6Inquisitor";
+                    color = new Color(226, 167, 60);
+                }
+                renderBeacon(event.partialTicks, display, sc, new Vec3(burrow.getKey()), color);
             }
         }
     }
@@ -490,7 +518,17 @@ public class Diana {
         GlStateManager.enableCull();
     }
 
-    static class particleBurrow {
+    public static class Waypoint {
+    }
+
+    public static class InquisWaypoint extends Waypoint {
+        String player = "";
+        public InquisWaypoint(String p) {
+            this.player = p;
+        }
+    }
+
+    public static class ParticleBurrowWaypoint extends Waypoint {
         int type = -1; //1 start, 2 treasure, 3 footsteps, 4 enchants
         //from Skytils
         void setType(EnumParticleTypes particle, int count, float speed, float xOffset, float yOffset, float zOffset) {
@@ -513,14 +551,14 @@ public class Diana {
     @SubscribeEvent
     void key(InputEvent.KeyInputEvent event) {
         EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
-        if (!toggle || player==null) return;
+        if (!toggle || player == null) return;
         if (keyBindings[0].isPressed() && selected != null) {
             Warp warp = Warp.closest(selected, true);
 
             if (warp.pos != null) {
                 if (warp.distance * 1.1 < player.getPositionVector().distanceTo(selected)) {
                     mc.thePlayer.sendChatMessage("/warp " + warp.name);
-                    if (messages) mc.thePlayer.addChatMessage(new ChatComponentText("§3[Diana] §rWarped to " + warp.name));
+                    if (messages) mc.thePlayer.addChatMessage(new ChatComponentText(Diana.chatTitle + "Warped to " + warp.name));
                     lastwarp = warp.name;
                 }
             }
@@ -531,7 +569,60 @@ public class Diana {
     void chat(ClientChatReceivedEvent event) {
         if (!toggle) return;
         String message = event.message.getFormattedText();
-        if (message.contains("§r§cYou haven't unlocked this fast travel destination!§r") &! lastwarp.equals("undefined")) {
+        String unformatted = event.message.getUnformattedText();
+
+        Matcher p1 = Pattern.compile("§\\S(?<pm>\\S+) §r§ejoined the (party|dungeon group)").matcher(message);
+        Matcher p2 = Pattern.compile("§\\S(?<pm>\\S+) (§r§ehas (been removed from the party | left the party) | §r§ewas removed from your party because they disconnected | because they were offline)").matcher(message);
+        Matcher p3 = Pattern.compile("§eYou have joined §r§\\S(?<pm>\\S+)'(s*) §r§eparty!").matcher(message);
+        Matcher p4 = Pattern.compile("§eYou'll be partying with: (?<pm>.+)").matcher(message);
+        Matcher p5 = Pattern.compile("The party was transferred to (?<pm>\\S+) because (?<pl>\\S+) left").matcher(message); //todo: color codes and rank? ( \S]+?)
+        String sender = getSender(unformatted);
+        if (message.contains("§r§9Party §8>")) {
+            if (!partyMembers.contains(sender) &! sender.equals(mc.thePlayer.getName())) partyMembers.add(sender);
+            inParty = true;
+        }
+        if (message.contains("You are not currently in a party.") || message.contains("You have been kicked from the party by") || message.contains("You left the party.") ||
+                message.contains("The party was disbanded because all invites expired and the party was empty") || message.contains("§r§ehas disbanded the party!")) {
+            partyMembers.clear();
+            inParty = false;
+        } else if (p1.find()) {
+            partyMembers.add(p1.group("pm"));
+            inParty = true;
+        } else if (p2.find()) {
+            partyMembers.add(p2.group("pm"));
+            inParty = true;
+        } else if (p3.find()) {
+            partyMembers.clear();
+            partyMembers.add(p3.group("pm"));
+            inParty = true;
+        } else if (p4.find()) {
+            for (String member : p4.group("pm").replaceAll("§\\S", "").split(", ")) {
+                String m = member.replaceAll("", "");
+                if (!m.equals(mc.thePlayer.getName()) & !partyMembers.contains(m)) {
+                    partyMembers.add(m);
+                }
+            }
+            inParty = true;
+        } else if (p5.find()) {
+            if (!partyMembers.contains(p5.group("pm")) &! p5.group("pm").equals(mc.thePlayer.getName())) partyMembers.add(p5.group("pm"));
+            partyMembers.remove(p5.group("pl"));
+            inParty = true;
+        } else if (message.contains("§6Party Members (")) {
+            Matcher p = Pattern.compile("Party Leader: ( \\S]+?)(?<pm>\\S+) ●").matcher(unformatted);
+            Matcher p0 = Pattern.compile("Party Members: (?<pm>(\\S+ ● )+)").matcher(unformatted); //todo: no idea
+            if (p.find()) {
+                if (!p.group("pm").equals(mc.thePlayer.getName()) &! partyMembers.contains(p.group("pm"))) partyMembers.add(p.group("pm"));
+            }
+            if (p0.find()) {
+                for (String member : p0.group("pm").split(" ● ")) {
+                    String m = member.replace("(\\S]+?)", "");
+                    if (!m.equals(mc.thePlayer.getName()) &! partyMembers.contains(m)) {
+                        partyMembers.add(m);
+                    }
+                }
+            }
+            inParty = true;
+        } else if (message.contains("§r§cYou haven't unlocked this fast travel destination!§r") & !lastwarp.equals("undefined")) {
             if (lastwarp.equals("hub")) {
                 lastwarp = "undefined";
                 return;
@@ -546,32 +637,59 @@ public class Diana {
                     return;
                 }
             }
-        } if (message.contains("§r§eYou dug out a Griffin Burrow! §r§7(") || message.contains("§r§eYou finished the Griffin burrow chain!")) {
+        } else if (message.contains("§r§eYou dug out a Griffin Burrow! §r§7(") || message.contains("§r§eYou finished the Griffin burrow chain! §r§7(4/4)§r") || message.contains("§r§eFollow the arrows to find the §r§6treasure§r§e!")) {
             resetRender();
-            arrow = true;
             arrowStart = null;
             arrowDir = null;
             oldparticles = new ArrayList<>();
-            if (dugburrow != null) {
-                boolean removed = false;
-                if (particleBurrows.remove(dugburrow) != null) {
-                    removed = true;
-                    foundBurrows.add(dugburrow);
+            arrow = true;
+            if (!dugburrow.isEmpty()) {
+                for (BlockPos b : dugburrow) {
+                    if (burrow != null) {
+                        if (maxDistance(new Vec3(b), burrow) < 5) {
+                            burrow = null;
+                        }
+                    }
+                    if (waypoints.remove(b) != null) {
+                        foundBurrows.add(b);
+                    }
                 }
-                if (burrow.squareDistanceTo(new Vec3(dugburrow)) < 30) {
-                    removed = true;
-                    burrow = null;
+                dugburrow = new ArrayList<>();
+            }
+            if (!message.contains("§r§6treasure")) lastdug = Integer.parseInt(unformatted.substring(unformatted.indexOf("(") + 1, unformatted.indexOf("(") + 2)) % 4 + 1;
+        } else if (message.contains("§7You were killed by")) {
+            if (!dugburrow.isEmpty()) {
+                for (BlockPos b : dugburrow) {
+                    if (burrow != null) {
+                        if (maxDistance(new Vec3(b), burrow) < 5) {
+                            burrow = null;
+                        }
+                    }
+                    if (waypoints.remove(b) != null) {
+                        foundBurrows.add(b);
+                    }
                 }
-                if (removed) dugburrow = null;
+                dugburrow = new ArrayList<>();
             }
-            lastdug = Integer.parseInt(message.substring(message.indexOf("(") + 1, message.indexOf("(") + 2)) % 4 + 1;
-        }
-        if (message.contains("§r&§c ☠ §r§7You were killed by §r§2") && dugburrow != null) {
-            if (particleBurrows.remove(dugburrow) != null) {
-                foundBurrows.add(dugburrow);
-                dugburrow = null;
+        } else if (unformatted.contains("[Diana] Inquis! [" + Pattern.compile("(-?\\d{1,3}),(-?\\d{1,3}),(-?\\d{1,3})") +"] close to")) {
+             if ((receiveInqFromAll || (message.contains("§r§9Party §8>") || partyMembers.contains(sender))) &! sender.equals(mc.thePlayer.getName())) {
+                 try {
+                     String data = unformatted.substring(unformatted.indexOf("[") + 1, unformatted.indexOf("]") - 1);
+                     Matcher ints = Pattern.compile("(-?\\d{1,3}),(-?\\d{1,3}),(-?\\d{1,3})").matcher(data);
+                     if (ints.find()) {
+                         BlockPos pos = new BlockPos(Integer.parseInt(ints.group(1)), Integer.parseInt(ints.group(2)), Integer.parseInt(ints.group(3)));
+                         waypoints.put(pos, new InquisWaypoint(sender));
+                     }
+                 } catch (Exception e) {
+                     e.printStackTrace();
+                 }
             }
         }
+    }
+
+    public static String getSender(String unformatted) {
+        String[] first = unformatted.split("] ");
+        return first[first.length - 1].split(":")[0];
     }
 
     public static double distanceTo(Vec3 burrow, EntityPlayerSP player) {
@@ -586,6 +704,13 @@ public class Diana {
         double distance = 129600;
         if (lowery-3 < yaw && yaw < highery + 3 && pitch < lowp + 4 && pitch > topp) distance = (highery - yaw) * (lowp - pitch);
         return distance;
+    }
+
+    public static double maxDistance(Vec3 pos, Vec3 target) {
+        double x = Math.abs(pos.xCoord - target.xCoord);
+        double y = Math.abs(pos.yCoord - target.yCoord);
+        double z = Math.abs(pos.zCoord - target.zCoord);
+        return Math.max(x, Math.max(y, z));
     }
 
     public static void intercept() {
@@ -649,7 +774,6 @@ public class Diana {
         sounds = new ArrayList<>();
         particles = new ArrayList<>();
         clicked = 0;
-        dugburrow = null;
         selected = null;
     }
     static void resetRender() {
@@ -669,8 +793,9 @@ public class Diana {
         oldparticles = new ArrayList<>();
         lastdug = 1;
         burrow = null;
-        particleBurrows = new HashMap<>();
+        waypoints = new HashMap<>();
         foundBurrows = new ArrayList<>();
+        dugburrow = new ArrayList<>();
         resetData();
         resetRender();
     }
