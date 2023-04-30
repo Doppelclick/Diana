@@ -238,7 +238,7 @@ public class WaypointUtils {
         WorldRenderer worldrenderer = tessellator.getWorldRenderer();
         int i = 0;
 
-        int j = fontrenderer.getStringWidth(str) / 2;
+        int j = fontrenderer.getStringWidth(StringUtils.stripControlCodes(str)) / 2;
         GlStateManager.disableTexture2D();
         worldrenderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
         worldrenderer.pos(-j - 1, -1 + i, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
@@ -247,10 +247,10 @@ public class WaypointUtils {
         worldrenderer.pos(j + 1, -1 + i, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
         tessellator.draw();
         GlStateManager.enableTexture2D();
-        fontrenderer.drawString(str, -fontrenderer.getStringWidth(str) / 2, i, 553648127);
+        fontrenderer.drawString(str, -j, i, 553648127);
         GlStateManager.depthMask(true);
 
-        fontrenderer.drawString(str, -fontrenderer.getStringWidth(str) / 2, i, -1);
+        fontrenderer.drawString(str, -j, i, -1);
 
         GlStateManager.enableDepth();
         GlStateManager.enableBlend();

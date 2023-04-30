@@ -109,5 +109,7 @@ public class config {
         if (!getBoolean("warps", "da")) Diana.Warp.set("da", false);
         if (!getBoolean("warps", "crypt")) Diana.Warp.set("crypt", false);
         if (!getBoolean("warps", "museum")) Diana.Warp.set("museum", false);
+
+        Diana.logger.info("Reloaded config");
     }
 }
