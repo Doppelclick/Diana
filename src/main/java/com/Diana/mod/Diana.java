@@ -587,7 +587,7 @@ public class Diana {
         String message = event.message.getFormattedText();
         String unformatted = event.message.getUnformattedText();
 
-        Matcher p1 = Pattern.compile("^§((\\[\\S+\\]\\s)?)\\S(?<pm>\\S+) §r§ejoined the (party|dungeon group)").matcher(message); //&a[VIP] mw_ &r&ejoined the party.&r
+        Matcher p1 = Pattern.compile("^§\\S((\\[\\S+\\]\\s)?)(?<pm>\\S+) §r§ejoined the (party|dungeon group)").matcher(message); //&a[VIP] mw_ &r&ejoined the party.&r
         Matcher p2 = Pattern.compile("§\\S(?<pm>\\S+) ((§r§ehas (been removed from the party | left the party)) | §r§ewas removed from your party because they disconnected | because they were offline)").matcher(message);
         Matcher p3 = Pattern.compile("^§eYou have joined §r§\\S(?<pm>\\S+)'(s*) §r§eparty!").matcher(message);
         Matcher p4 = Pattern.compile("^§eYou'll be partying with: (?<pm>.+)").matcher(message); //&eYou'll be partying with: &r&a[VIP] mw_&r
