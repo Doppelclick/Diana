@@ -587,13 +587,17 @@ public class Diana {
         String message = event.message.getFormattedText();
         String unformatted = event.message.getUnformattedText();
 
-        Matcher p1 = Pattern.compile("§\\S(?<pm>\\S+) §r§ejoined the (party|dungeon group)").matcher(message);
-        Matcher p2 = Pattern.compile("§\\S(?<pm>\\S+) (§r§ehas (been removed from the party | left the party) | §r§ewas removed from your party because they disconnected | because they were offline)").matcher(message);
-        Matcher p3 = Pattern.compile("§eYou have joined §r§\\S(?<pm>\\S+)'(s*) §r§eparty!").matcher(message);
-        Matcher p4 = Pattern.compile("§eYou'll be partying with: (?<pm>.+)").matcher(message);
-        Matcher p5 = Pattern.compile("The party was transferred to (?<pm>\\S+) because (?<pl>\\S+) left").matcher(message); //todo: color codes and rank? ( \S]+?)
+        Matcher p1 = Pattern.compile("^§\\S(?<pm>\\S+) §r§ejoined the (party|dungeon group)").matcher(message);
+        Matcher p2 = Pattern.compile("§\\S(?<pm>\\S+) ((§r§ehas (been removed from the party | left the party)) | §r§ewas removed from your party because they disconnected | because they were offline)").matcher(message);
+        Matcher p3 = Pattern.compile("^§eYou have joined §r§\\S(?<pm>\\S+)'(s*) §r§eparty!").matcher(message);
+        Matcher p4 = Pattern.compile("^§eYou'll be partying with: (?<pm>.+)").matcher(message);
+        Matcher p5 = Pattern.compile("^The party was transferred to (?<pm>\\S+) because (?<pl>\\S+) left").matcher(message); //todo: color codes and rank? ( \S]+?)
+        Matcher pl = Pattern.compile("Party Leader: ((\\[\\S+\\]\\s)?)(?<pl>\\S+) ●").matcher(unformatted);
+        Matcher pms = Pattern.compile("Party Members: (?<pms>(((\\[\\S+\\]\\s)?)\\S+ ● )+)").matcher(unformatted);
+        Matcher burrow = Pattern.compile("§r§eYou dug out a Griffin Burrow! §r§7\\((?<number>\\d)/4\\)").matcher(message);
+        Matcher inquis = Pattern.compile("\\[Diana\\] Inquis! \\[(?<one>(-?\\d{1,3})),(?<two>(-?\\d{1,3})),(?<three>(-?\\d{1,3}))\\] close to ").matcher(message);
         String sender = getSender(unformatted);
-        if (message.contains("§r§9Party §8>")) {
+        if (message.contains("§r§9Party §8>") && sender != null) {
             if (!partyMembers.contains(sender) &! sender.equals(mc.thePlayer.getName())) partyMembers.add(sender);
             inParty = true;
         }
@@ -605,40 +609,40 @@ public class Diana {
             partyMembers.add(p1.group("pm"));
             inParty = true;
         } else if (p2.find()) {
-            partyMembers.add(p2.group("pm"));
-            inParty = true;
+            if (partyMembers.remove(p2.group("pm"))) {
+                if (partyMembers.isEmpty()) inParty = false;
+            }
         } else if (p3.find()) {
             partyMembers.clear();
             partyMembers.add(p3.group("pm"));
             inParty = true;
         } else if (p4.find()) {
             for (String member : p4.group("pm").replaceAll("§\\S", "").split(", ")) {
-                String m = member.replaceAll("", "");
-                if (!m.equals(mc.thePlayer.getName()) & !partyMembers.contains(m)) {
+                String m = member.replaceFirst("(\\[\\S+\\]\\s)", "");
+                if (!m.equals(mc.thePlayer.getName()) &! partyMembers.contains(m)) {
                     partyMembers.add(m);
                 }
             }
             inParty = true;
         } else if (p5.find()) {
-            if (!partyMembers.contains(p5.group("pm")) &! p5.group("pm").equals(mc.thePlayer.getName())) partyMembers.add(p5.group("pm"));
-            partyMembers.remove(p5.group("pl"));
+            String pm = StringUtils.stripControlCodes(p5.group("pm"));
+            if (!partyMembers.contains(pm) &! pm.equals(mc.thePlayer.getName())) partyMembers.add(pm);
+            String ptl = StringUtils.stripControlCodes(p5.group("pl"));
+            partyMembers.remove(ptl);
             inParty = true;
-        } else if (message.contains("§6Party Members (")) {
-            Matcher p = Pattern.compile("Party Leader: ( \\S]+?)(?<pm>\\S+) ●").matcher(unformatted);
-            Matcher p0 = Pattern.compile("Party Members: (?<pm>(\\S+ ● )+)").matcher(unformatted); //todo: no idea
-            if (p.find()) {
-                if (!p.group("pm").equals(mc.thePlayer.getName()) &! partyMembers.contains(p.group("pm"))) partyMembers.add(p.group("pm"));
-            }
-            if (p0.find()) {
-                for (String member : p0.group("pm").split(" ● ")) {
-                    String m = member.replace("(\\S]+?)", "");
-                    if (!m.equals(mc.thePlayer.getName()) &! partyMembers.contains(m)) {
-                        partyMembers.add(m);
-                    }
+        } else if (pl.find() && message.startsWith("§eParty Leader: ")) {
+            String ptl = pl.group("pl");
+            if (!ptl.equals(mc.thePlayer.getName()) &! partyMembers.contains(ptl)) partyMembers.add(ptl);
+            inParty = true;
+        } else if (pms.find() && message.startsWith("§eParty Members: ")) {
+            for (String m : pms.group("pms").split(" ● ")) {
+                String member = m.replaceFirst("(\\[\\S+\\]\\s)", "");
+                if (!member.equals(mc.thePlayer.getName()) &! partyMembers.contains(member)) {
+                    partyMembers.add(member);
                 }
             }
             inParty = true;
-        } else if (message.contains("§r§cYou haven't unlocked this fast travel destination!§r") & !lastwarp.equals("undefined")) {
+        } else if (message.contains("§r§cYou haven't unlocked this fast travel destination!§r") &! lastwarp.equals("undefined")) {
             if (lastwarp.equals("hub")) {
                 lastwarp = "undefined";
                 return;
@@ -654,7 +658,7 @@ public class Diana {
                     return;
                 }
             }
-        } else if (message.contains("§r§eYou dug out a Griffin Burrow! §r§7(") || message.contains("§r§eYou finished the Griffin burrow chain! §r§7(4/4)§r") || message.contains("§r§eFollow the arrows to find the §r§6treasure§r§e!")) {
+        } else if (burrow.find() || message.contains("§r§eYou finished the Griffin burrow chain! §r§7(4/4)§r") || message.contains("§r§eFollow the arrows to find the §r§6treasure§r§e!")) {
             resetRender();
             arrowStart = null;
             arrowDir = null;
@@ -662,9 +666,9 @@ public class Diana {
             arrow = true;
             if (!dugburrow.isEmpty()) {
                 for (BlockPos b : dugburrow) {
-                    if (burrow != null) {
-                        if (maxDistance(new Vec3(b), burrow) < 5) {
-                            burrow = null;
+                    if (Diana.burrow != null) {
+                        if (maxDistance(new Vec3(b), Diana.burrow) < 5) {
+                            Diana.burrow = null;
                         }
                     }
                     if (waypoints.remove(b) != null) {
@@ -673,17 +677,19 @@ public class Diana {
                 }
                 dugburrow = new ArrayList<>();
             }
-            try {
-                if (!message.contains("§r§6treasure")) lastdug = Integer.parseInt(unformatted.substring(unformatted.indexOf("(") + 1, unformatted.indexOf("(") + 2)) % 4 + 1;
-            } catch (NumberFormatException ne) {
-                ne.printStackTrace();
+            if (!message.contains("§r§6treasure§r")) { //todo: can't remember if this is sent when chain is completed, might change later
+                try {
+                    lastdug = burrow.find() ? (Integer.parseInt(burrow.group("number")) % 4 + 1) : 1;
+                } catch (NumberFormatException ne) {
+                    ne.printStackTrace();
+                }
             }
-        } else if (message.contains("§7You were killed by")) {
+        } else if (message.contains("§7You were killed by ")) {
             if (!dugburrow.isEmpty()) {
                 for (BlockPos b : dugburrow) {
-                    if (burrow != null) {
-                        if (maxDistance(new Vec3(b), burrow) < 5) {
-                            burrow = null;
+                    if (Diana.burrow != null) {
+                        if (maxDistance(new Vec3(b), Diana.burrow) < 5) {
+                            Diana.burrow = null;
                         }
                     }
                     if (waypoints.remove(b) != null) {
@@ -692,17 +698,13 @@ public class Diana {
                 }
                 dugburrow = new ArrayList<>();
             }
-        } else if (unformatted.contains("[Diana] Inquis! [" + Pattern.compile("(-?\\d{1,3}),(-?\\d{1,3}),(-?\\d{1,3})") +"] close to")) {
+        } else if (inquis.find() && (sender != null)) {
              if ((receiveInqFromAll || (message.contains("§r§9Party §8>") || partyMembers.contains(sender))) &! sender.equals(mc.thePlayer.getName())) {
                  try {
-                     String data = unformatted.split(String.valueOf("[Diana] Inquis! ["))[1].split("]")[0];
-                     Matcher ints = Pattern.compile("(-?\\d{1,3}),(-?\\d{1,3}),(-?\\d{1,3})").matcher(data);
-                     if (ints.find()) {
-                         BlockPos pos = new BlockPos(Integer.parseInt(ints.group(1)), Integer.parseInt(ints.group(2)), Integer.parseInt(ints.group(3)));
-                         waypoints.put(pos, new InquisWaypoint(sender, System.currentTimeMillis()));
-                         Utils.showClientTitle("", "§c" + sender + " 's Inquis near " + Warp.closest(new Vec3(pos), true).name);
-                         Utils.ping();
-                     }
+                     BlockPos pos = new BlockPos(Integer.parseInt(inquis.group("one")), Integer.parseInt(inquis.group("two")), Integer.parseInt(inquis.group("three")));
+                     waypoints.put(pos, new InquisWaypoint(sender, System.currentTimeMillis()));
+                     Utils.showClientTitle("", "§c" + sender + " 's Inquis near " + Warp.closest(new Vec3(pos), true).name);
+                     Utils.ping();
                  } catch (Exception e) {
                      e.printStackTrace();
                  }
@@ -711,8 +713,10 @@ public class Diana {
     }
 
     public static String getSender(String unformatted) {
-        String[] first = unformatted.split("] ");
-        return first[Math.min(1, first.length - 1)].split(":")[0];
+        Matcher matcher = Pattern.compile("^((Party > )?)((\\[\\S+\\]\\s)?)(?<sender>\\S+):").matcher(unformatted);
+        if (matcher.find()) {
+            return matcher.group("sender");
+        } return null;
     }
 
     public static double distanceTo(Vec3 burrow, EntityPlayerSP player) {
