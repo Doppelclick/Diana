@@ -20,10 +20,12 @@ public class DianaCommand extends CommandBase {
                 + " /diana interpolation §7| Toggle interpolation for guess burrow§r (" + config.understandMe(Diana.interpolation) + ")\n"
                 + " /diana proximity §7| Toggle nearby burrow detection§r (" + config.understandMe(Diana.proximity) + ")\n"
                 + " /diana messages §7| Toggle messages§r (" + config.understandMe(Diana.messages) + ")\n"
+                + " /diana send §7| Change who to send inquis coords to§r (" + allOrParty(Diana.sendInqToAll) + ")\n"
+                + " /diana receive §7| Change from who to receive inquis coords§r (" + allOrParty(Diana.receiveInqFromAll) + ")\n"
                 + " /diana beacon §7[help, block, beam, text]§r\n"
+                + " /diana ignore [list, add [player], remove [player]] §7| View / (add / remove players from) your inquis ignore list§r\n"
                 + " /diana clear §7| Clear burrows§r";
     }
-
 
     static String beaconHelp() {
         return "§3Diana Solver §rbeacon options\n"
@@ -31,6 +33,10 @@ public class DianaCommand extends CommandBase {
                 + " /diana beacon block §7| Toggle beacon block§r (" + config.understandMe(Diana.block) + ")\n"
                 + " /diana beacon beam §7| Toggle beacon beam§r (" + config.understandMe(Diana.beam) + ")\n"
                 + " /diana beacon text §7| Toggle beacon text§r (" + config.understandMe(Diana.text) + ")";
+    }
+
+    static String allOrParty(boolean all) {
+        return "§r" + (all ? "all" : "§9party") + "§r";
     }
 
     @Override
@@ -48,10 +54,15 @@ public class DianaCommand extends CommandBase {
     @Override
     public List<String> addTabCompletionOptions(ICommandSender sender, String[] strings, BlockPos pos) {
         if (strings.length == 1) {
-            return getListOfStringsMatchingLastWord(strings, "help", "toggle", "guess", "interpolation", "proximity", "messages", "beacon", "clear");
-        }
-        if ((strings.length == 2) && strings[1].equalsIgnoreCase("beacon")) {
-            return getListOfStringsMatchingLastWord(strings, "help", "block", "beam", "text");
+            return getListOfStringsMatchingLastWord(strings, "help", "toggle", "guess", "interpolation", "proximity", "messages", "send", "receive", "beacon", "ignore", "clear");
+        } else if ((strings.length == 2)) {
+            if (strings[0].equalsIgnoreCase("beacon")) {
+                return getListOfStringsMatchingLastWord(strings, "help", "block", "beam", "text");
+            } else if (strings[0].equalsIgnoreCase("ignore")) {
+                return getListOfStringsMatchingLastWord(strings, "list", "add", "remove");
+            }
+        } else if (strings.length == 3 && strings[0].equalsIgnoreCase("ignore") && (strings[1].equalsIgnoreCase("add") || strings[1].equalsIgnoreCase("remove"))) {
+            return getListOfStringsMatchingLastWord(strings, Diana.receivedInquisFrom);
         }
         return null;
     }
@@ -91,6 +102,18 @@ public class DianaCommand extends CommandBase {
                     config.writeBooleanConfig("toggles", "Messages", Diana.messages);
                     break;
 
+                case "send":
+                    Diana.sendInqToAll = !Diana.sendInqToAll;
+                    Utils.sendModMessage("Inquis coords will be sent to " + allOrParty(Diana.sendInqToAll));
+                    config.writeBooleanConfig("toggles", "SendInquisToAll", Diana.sendInqToAll);
+                    break;
+
+                case "receive":
+                    Diana.receiveInqFromAll = !Diana.receiveInqFromAll;
+                    Utils.sendModMessage("You will receive inquis coords from " + allOrParty(Diana.receiveInqFromAll));
+                    config.writeBooleanConfig("toggles", "ReceiveInquisFromAll", Diana.receiveInqFromAll);
+                    break;
+
                 case "beacon":
                     if (strings.length > 1) {
                         switch (strings[1].toLowerCase()) {
@@ -117,6 +140,44 @@ public class DianaCommand extends CommandBase {
                         }
                     } else {
                         Utils.sendModMessage(new ChatComponentText(beaconHelp()));
+                    }
+                    break;
+
+                case "ignore":
+                    if (strings.length == 1) {
+                        Utils.sendModMessage("Ignore List: " + Diana.ignoredPlayers);
+                    } else if (strings.length == 2) {
+                        if (strings[1].equalsIgnoreCase("list") || strings[1].equalsIgnoreCase("view")) {
+                            Utils.sendModMessage("Ignore List: " + Diana.ignoredPlayers);
+                        } else {
+                            Utils.sendModMessage("§cInvalid args!§r /diana ignore [list, add [player], remove [player]]");
+                        }
+                    } else {
+                        switch (strings[1].toLowerCase()) {
+                            case "list":
+                            case "view":
+                                Utils.sendModMessage("Ignore List: " + Diana.ignoredPlayers);
+                                break;
+
+                            case "add":
+                                List<String> players1 = Utils.getArgsAfter(strings, 2);
+                                for (String p : players1) {
+                                    if (!Diana.ignoredPlayers.contains(p)) Diana.ignoredPlayers.add(p);
+                                }
+                                Utils.sendModMessage("Added " + Arrays.toString(players1.toArray()) + " to your ignore List");
+                                config.writeStringListConfig("data", "InquisIgnoreList", Diana.ignoredPlayers);
+                                break;
+
+                            case "remove":
+                                List<String> players2 = Utils.getArgsAfter(strings, 2);
+                                Diana.ignoredPlayers.removeAll(players2);
+                                Utils.sendModMessage("Removed " + Arrays.toString(players2.toArray()) + " from your ignore List");
+                                config.writeStringListConfig("data", "InquisIgnoreList", Diana.ignoredPlayers);
+                                break;
+
+                            default:
+                                Utils.sendModMessage("§cInvalid args!§r /diana ignore [list, add [player], remove [player]]");
+                        }
                     }
                     break;
 

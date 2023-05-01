@@ -89,11 +89,12 @@ public class Diana {
     public static boolean interpolation = true;
     public static boolean proximity = true;
     public static boolean messages = false;
+    public static boolean sendInqToAll = false;
+    public static boolean receiveInqFromAll = true;
     public static boolean block = true;
     public static boolean beam = true;
     public static boolean text = true;
-    public static boolean sendInqToAll = true;
-    public static boolean receiveInqFromAll = true;
+    public static List<String> ignoredPlayers = new ArrayList<>();
 
     public static Minecraft mc = Minecraft.getMinecraft();
     public static boolean inParty = false;
@@ -120,6 +121,7 @@ public class Diana {
     static long lastinterp = 0;
     static long interp = 0;
     static int ticks = 0;
+    public static List<String> receivedInquisFrom = new ArrayList<>();
 
 
     @Mod.EventHandler
@@ -699,12 +701,16 @@ public class Diana {
                 dugburrow = new ArrayList<>();
             }
         } else if (inquis.find() && (sender != null)) {
-             if ((receiveInqFromAll || (message.contains("§r§9Party §8>") || partyMembers.contains(sender))) &! sender.equals(mc.thePlayer.getName())) {
+             if ((receiveInqFromAll || (message.contains("§r§9Party §8>") || partyMembers.contains(sender))) &! sender.equals(mc.thePlayer.getName()) &! ignoredPlayers.contains(sender)) {
                  try {
                      BlockPos pos = new BlockPos(Integer.parseInt(inquis.group("one")), Integer.parseInt(inquis.group("two")), Integer.parseInt(inquis.group("three")));
                      waypoints.put(pos, new InquisWaypoint(sender, System.currentTimeMillis()));
                      Utils.showClientTitle("", "§c" + sender + " 's Inquis near " + Warp.closest(new Vec3(pos), true).name);
                      Utils.ping();
+                     ChatComponentText ignore = new ChatComponentText("§c [Ignore this player] ");
+                     ignore.setChatStyle(ignore.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/diana ignore add " + sender)));
+                     Utils.sendModMessage(new ChatComponentText(chatTitle + "§cInquis Waypoint received§r from " + sender + " ").appendSibling(ignore));
+                     receivedInquisFrom.add(sender);
                  } catch (Exception e) {
                      e.printStackTrace();
                  }

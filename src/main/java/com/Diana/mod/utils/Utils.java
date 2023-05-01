@@ -10,6 +10,8 @@ import net.minecraft.util.IChatComponent;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -33,6 +35,14 @@ public class Utils {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public static List<String> getArgsAfter(String[] strings, int in) {
+        List<String> args = new ArrayList<>();
+        for (int i = in; i < strings.length; i++) {
+            args.add(strings[i]);
+        }
+        return args;
     }
 
     public static void sendModMessage(String msg) {

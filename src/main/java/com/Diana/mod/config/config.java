@@ -1,13 +1,12 @@
 package com.Diana.mod.config;
 
 import com.Diana.mod.Diana;
-import net.minecraft.util.BlockPos;
 import net.minecraftforge.common.config.Configuration;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Taken from DungeonRooms under Creative Commons Attribution-NonCommercial 3.0
@@ -46,12 +45,41 @@ public class config {
         return true;
     }
 
+    public static ArrayList<String> getStringList(String category, String key) {
+        config = new Configuration(new File(file));
+        try {
+            config.load();
+            if (config.getCategory(category).containsKey(key)) {
+                return new ArrayList<>(Arrays.asList(config.get(category, key, new String[0]).getStringList()));
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            config.save();
+        }
+        return new ArrayList<>();
+    }
+
     public static void writeBooleanConfig(String category, String key, boolean value) {
         config = new Configuration(new File(file));
         try {
             config.load();
             config.get(category, key, value).getBoolean();
             config.getCategory(category).get(key).set(value);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            config.save();
+        }
+    }
+
+    public static void writeStringListConfig(String category, String key, List<String> value) {
+        config = new Configuration(new File(file));
+        try {
+            String[] write = value.stream().map(String::toString).toArray(String[]::new);
+            config.load();
+            config.get(category, key, write).getStringList();
+            config.getCategory(category).get(key).set(write);
         } catch (Exception ex) {
             ex.printStackTrace();
         } finally {
@@ -85,6 +113,8 @@ public class config {
         if (!hasKey("toggles", "Interpolation")) writeBooleanConfig("toggles", "Interpolation", true);
         if (!hasKey("toggles", "BurrowProximity")) writeBooleanConfig("toggles", "BurrowProximity", true);
         if (!hasKey("toggles", "Messages")) writeBooleanConfig("toggles", "Messages", false);
+        if (!hasKey("toggles", "SendInquisToAll")) writeBooleanConfig("toggles", "SendInquisToAll", false);
+        if (!hasKey("toggles", "ReceiveInquisFromAll")) writeBooleanConfig("toggles", "ReceiveInquisFromAll", true);
 
         if (!hasKey("render", "BeaconBlock")) writeBooleanConfig("render", "BeaconBlock", true);
         if (!hasKey("render", "BeaconBeam")) writeBooleanConfig("render", "BeaconBeam", true);
@@ -95,11 +125,15 @@ public class config {
         if (!hasKey("warps", "crypt")) writeBooleanConfig("warps", "crypt", true);
         if (!hasKey("warps", "museum")) writeBooleanConfig("warps", "museum", true);
 
+        if (!hasKey("data", "InquisIgnoreList")) writeStringListConfig("data", "InquisIgnoreList", new ArrayList<>());
+
         Diana.toggle = getBoolean("toggles", "ModToggle");
         Diana.guess = getBoolean("toggles", "GuessBurrow");
         Diana.interpolation = getBoolean("toggles", "Interpolation");
         Diana.proximity = getBoolean("toggles", "BurrowProximity");
         Diana.messages = getBoolean("toggles", "Messages");
+        Diana.sendInqToAll = getBoolean("toggles", "SendInquisToAll");
+        Diana.receiveInqFromAll = getBoolean("toggles", "ReceiveInquisFromAll");
 
         Diana.block = getBoolean("render", "BeaconBlock");
         Diana.beam = getBoolean("render", "BeaconBeam");
@@ -109,6 +143,8 @@ public class config {
         if (!getBoolean("warps", "da")) Diana.Warp.set("da", false);
         if (!getBoolean("warps", "crypt")) Diana.Warp.set("crypt", false);
         if (!getBoolean("warps", "museum")) Diana.Warp.set("museum", false);
+
+        Diana.ignoredPlayers = getStringList("data", "InquisIgnoreList");
 
         Diana.logger.info("Reloaded config");
     }
