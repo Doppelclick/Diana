@@ -61,8 +61,10 @@ public class DianaCommand extends CommandBase {
             } else if (strings[0].equalsIgnoreCase("ignore")) {
                 return getListOfStringsMatchingLastWord(strings, "list", "add", "remove");
             }
-        } else if (strings.length == 3 && strings[0].equalsIgnoreCase("ignore") && (strings[1].equalsIgnoreCase("add") || strings[1].equalsIgnoreCase("remove"))) {
-            return getListOfStringsMatchingLastWord(strings, Diana.receivedInquisFrom);
+        } else if (strings.length >= 3 && strings[0].equalsIgnoreCase("ignore") && (strings[1].equalsIgnoreCase("add") || strings[1].equalsIgnoreCase("remove"))) {
+            List<String> players = new ArrayList<>(Diana.receivedInquisFrom);
+            players.removeAll(Utils.getArgsAfter(strings, 2));
+            return getListOfStringsMatchingLastWord(strings, players);
         }
         return null;
     }
