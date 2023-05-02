@@ -17,6 +17,7 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.Entity;
 import net.minecraft.event.ClickEvent;
+import net.minecraft.event.HoverEvent;
 import net.minecraft.init.Blocks;
 import net.minecraft.network.play.client.C07PacketPlayerDigging;
 import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
@@ -196,7 +197,7 @@ public class Diana {
                             logger.info("Update available");
                             String releaseURL = "https://github.com/Doppelclick/Diana/releases/latest";
                             ChatComponentText update = new ChatComponentText("§l§2  [UPDATE]  ");
-                            update.setChatStyle(update.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, releaseURL)));
+                            update.setChatStyle(update.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, releaseURL)).setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentText("github - " + latestVersion))));
                             Utils.sendModMessage(new ChatComponentText(chatTitle + "§cSolver is outdated. Please update to " + latestTag + ".\n").appendSibling(update));
                         } else logger.info("No update found");
                     } catch (Exception e) {
@@ -328,7 +329,7 @@ public class Diana {
             ticks = 0;
             for (Map.Entry<BlockPos, Waypoint> e : waypoints.entrySet()) {
                 if (e.getValue() instanceof InquisWaypoint) {
-                    if (System.currentTimeMillis() > ((InquisWaypoint) e.getValue()).time  + 60000) waypoints.remove(e.getKey());
+                    if (System.currentTimeMillis() > ((InquisWaypoint) e.getValue()).time + 60000) waypoints.remove(e.getKey());
                 }
             }
         }
@@ -708,7 +709,7 @@ public class Diana {
                      Utils.showClientTitle("", "§c" + sender + " 's Inquis near " + Warp.closest(new Vec3(pos), true).name);
                      Utils.ping();
                      ChatComponentText ignore = new ChatComponentText("§c [Ignore this player] ");
-                     ignore.setChatStyle(ignore.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/diana ignore add " + sender)));
+                     ignore.setChatStyle(ignore.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/diana ignore add " + sender)).setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentText("ignore add " + sender))));
                      Utils.sendModMessage(new ChatComponentText(chatTitle + "§cInquis Waypoint received§r from " + sender + " ").appendSibling(ignore));
                      receivedInquisFrom.add(sender);
                  } catch (Exception e) {
@@ -728,14 +729,14 @@ public class Diana {
     public static double distanceTo(Vec3 burrow, EntityPlayerSP player) {
         Vec3 playerp = player.getPositionVector().addVector(0,player.getEyeHeight(),0);
         float yaw = player.rotationYaw % 360;
-        if (yaw<0) yaw+=360;
+        if (yaw < 0) yaw += 360;
         float pitch = player.rotationPitch;
         double lowery = getYaw(playerp, burrow);
         double highery = getYaw(playerp, burrow.addVector(1,1,1));
         double lowp = getPitch(playerp, burrow.addVector(0.5,1,0.5));
         double topp = getPitch(playerp, new Vec3(burrow.xCoord + 0.5, 255, burrow.zCoord + 0.5));
         double distance = 129600;
-        if (lowery-3 < yaw && yaw < highery + 3 && pitch < lowp + 4 && pitch > topp) distance = (highery - yaw) * (lowp - pitch);
+        if (lowery - 3 < yaw && yaw < highery + 3 && pitch < lowp + 4 && pitch > topp) distance = (highery - yaw) * (lowp - pitch);
         return distance;
     }
 

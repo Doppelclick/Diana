@@ -13,14 +13,40 @@
 </p>
 
 ## Diana burrow waypoints:
-This mod guesses Diana burrow Waypoints.
-The main command is /Diana
+
+### Burrow Waypoints:
++ Nearby burrows and a guess for the ancestral spade
++ Inquisitor waypoints shared through party/all chat - manageable ignore list - switch between receiving/sending from/to party/all chat
++ Warp to the waypoint you are looking at using a keybind (controls menu) - travel destinations you have not unlocked yet will be blocked in the future, change this in the config file
+
+### Command
++ **/diana**
+  + **help** | Help message
+  + **toggle** | Toggle the mod
+  + **guess** | Toggle burrow guess
+  + **interpolation** | Toggle interpolation for when the position of the guess burrow changes
+  + **proximity** | Toggle nearby burrow detection
+  + **messages** | Toggle useless messages (default off)
+  + **send** | Change who to send inquis coords to
+  + **receive** | Change from who to receive inquis coords
+  + **beacon** [help, block, beam, text] | Change the appearance of waypoint beacons
+    + **help** | Help message
+    + **block** | Toggle beacon block
+    + **beam** | Toggle beacon beam
+    + **text** | Toggle beacon text
+  + **ignore** [list, add [player], remove [player]] | View / (add / remove players from) your inquis ignore list
+    + **list** | Lists all ignored players
+    + **add** [player (player1 player2 ...)] | Add one or multiple players to your ignore list (support for tab completions from players you have received inquisitor coords from)
+    + **remove** [player] | Works in the same way as the above
+  + **clear** | Clear burrow data
+
+- Config file: .minecraft\config\Diana.cfg
 
 ### Discord:
 [![Discord](https://img.shields.io/badge/Discord-Doppelclick%235993-blue?style=for-the-badge&logo=appveyor)](https://discord.com/channels/@me)
 
 ### Credits:
-Took a lot of stuff from DungeonRooms (partly from NEU), the calculation from Soopy (it tested it to be the most accurate), the Packet Handling from Luna, proximity values from Skytils
+Took a lot of stuff from DungeonRooms (partly from NEU), the calculation from Soopy (I tested it to be the most accurate), the Packet Handling from Luna, proximity values from Skytils
 
 ### Download:
 <p align="left">
