@@ -98,6 +98,7 @@ public class Diana {
     public static List<String> ignoredPlayers = new ArrayList<>();
 
     public static Minecraft mc = Minecraft.getMinecraft();
+    public static boolean inHub = false;
     public static boolean inParty = false;
     public static List<String> partyMembers = new ArrayList<>();
     static boolean echo = false;
@@ -244,7 +245,7 @@ public class Diana {
     @SubscribeEvent
     void entity(EntityJoinWorldEvent event) {
         Entity e = event.entity;
-        if (e == null |! toggle) return;
+        if (e == null |! toggle |! inHub) return;
         EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
         if (player == null) return;
         if (e.getName().toLowerCase().contains("inquis") &! e.getName().contains("'") && (sendInqToAll || inParty)) {
@@ -263,7 +264,7 @@ public class Diana {
     @SubscribeEvent
     void sendPacket(PacketEvent.SendEvent event) {
         EntityPlayerSP player = mc.thePlayer;
-        if (player == null |! toggle) return;
+        if (player == null |! toggle |! inHub) return;
         if (player.getHeldItem() == null) return;
         if (player.getHeldItem().getDisplayName().toLowerCase().contains("ancestral spade")) {
             if (event.packet instanceof C07PacketPlayerDigging) {
@@ -282,7 +283,7 @@ public class Diana {
     @SubscribeEvent
     void interact(PlayerInteractEvent event) {
         EntityPlayerSP player = mc.thePlayer;
-        if (!toggle || player == null) return;
+        if (!toggle || player == null |! inHub) return;
         if (event.action == PlayerInteractEvent.Action.RIGHT_CLICK_AIR && guess) {
             if (System.currentTimeMillis() > clicked + 2000) {
                 if (player.getHeldItem() != null) {
@@ -305,7 +306,7 @@ public class Diana {
 
     @SubscribeEvent
     void tick(TickEvent event) {
-        if (event.phase != TickEvent.Phase.START |! toggle) return;
+        if (event.phase != TickEvent.Phase.START |! toggle |! inHub) return;
         if (mc.theWorld == null || mc.thePlayer == null) return;
         ticks++;
         if (ticks % 20 == 0) {
@@ -337,7 +338,7 @@ public class Diana {
 
     @SubscribeEvent(receiveCanceled = true, priority = EventPriority.HIGH)
     void sound(PlaySoundEvent event) {
-        if (!toggle) return;
+        if (!toggle |! inHub) return;
         if (event.name.equals("note.harp") && guess && echo) {
             pitch.add(event.sound.getPitch());
             sounds.add(new Vec3(event.sound.getXPosF(), event.sound.getYPosF(), event.sound.getZPosF()));
@@ -347,7 +348,7 @@ public class Diana {
 
     @SubscribeEvent
     void packet(PacketEvent.ReceiveEvent event) {
-        if (!toggle) return;
+        if (!toggle |! inHub) return;
         EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
         if (player == null) return;
         if (event.packet instanceof S2APacketParticles) {
@@ -419,9 +420,9 @@ public class Diana {
      */
     @SubscribeEvent
     void worldRender(RenderWorldLastEvent event) {
-        if (!toggle &! block &! beam &! text) return;
+        if (!toggle &! block &! beam &! text |! inHub) return;
         EntityPlayerSP player = mc.thePlayer;
-        if (player==null) return;
+        if (player == null) return;
         double distance = 129600;
         Vec3 guesspos = null;
         if (guess && burrow != null) {
@@ -570,7 +571,7 @@ public class Diana {
     @SubscribeEvent
     void key(InputEvent.KeyInputEvent event) {
         EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
-        if (!toggle || player == null) return;
+        if (!toggle || player == null |! inHub) return;
         if (keyBindings[0].isPressed() && selected != null) {
             Warp warp = Warp.closest(selected, true);
 
@@ -586,9 +587,11 @@ public class Diana {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
     void chat(ClientChatReceivedEvent event) {
-        if (!toggle) return;
+        if (!toggle || event.type != 0) return;
         String message = event.message.getFormattedText();
-        String unformatted = event.message.getUnformattedText();
+        String unformatted = StringUtils.stripControlCodes(event.message.getUnformattedText());
+
+        Matcher lobby = Pattern.compile("\\{\"server\":\"(?<server>\\S+)\",\"gametype\":\"SKYBLOCK\",\"mode\":\"(?<mode>\\S+)\",\"map\":\"(?<map>\\S+)\"\\}").matcher(message);
 
         Matcher p1 = Pattern.compile("^§\\S((\\[\\S+\\]\\s)?)(?<pm>\\S+) §r§ejoined the (party|dungeon group)").matcher(message); //§a[VIP] AA §r§ejoined the party.§r
         Matcher p2 = Pattern.compile("§\\S((\\[\\S+\\]\\s)?)(?<pm>\\S+) ((§r§ehas (been removed from the party | left the party)) | §r§ewas removed from your party because they disconnected | because they were offline)").matcher(message);
@@ -602,9 +605,13 @@ public class Diana {
         String sender = getSender(unformatted);
         if (message.contains("§r§9Party §8>") && sender != null) {
             if (!partyMembers.contains(sender) &! sender.equals(mc.thePlayer.getName())) partyMembers.add(sender);
+            Utils.sendModMessage(unformatted);
             inParty = true;
         }
-        if (message.contains("You are not currently in a party.") || message.contains("You have been kicked from the party by") || message.contains("You left the party.") ||
+        if (lobby.find() &! inHub) {
+            inHub = true;
+            logger.info("Joined Skyblock hub");
+        } else if (message.contains("You are not currently in a party.") || message.contains("You have been kicked from the party by") || message.contains("You left the party.") ||
                 message.contains("The party was disbanded because all invites expired and the party was empty") || message.contains("§r§ehas disbanded the party!")) {
             partyMembers.clear();
             inParty = false;
@@ -720,7 +727,7 @@ public class Diana {
     }
 
     public static String getSender(String unformatted) {
-        Matcher matcher = Pattern.compile("^((Party > )?)((\\[\\S+\\]\\s)?)(?<sender>\\S+):").matcher(unformatted);
+        Matcher matcher = Pattern.compile("((Party > )?)((\\[\\S+\\]\\s)?)(?<sender>\\S+):").matcher(unformatted);
         if (matcher.find()) {
             return matcher.group("sender");
         } return null;
@@ -821,6 +828,7 @@ public class Diana {
 
     @SubscribeEvent
     void worldUnload(WorldEvent.Unload event) {
+        inHub = false;
         arrow = false;
         arrowStart = null;
         arrowDir = null;

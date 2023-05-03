@@ -200,6 +200,11 @@ public class DianaCommand extends CommandBase {
                     Utils.sendModMessage("Reloaded config");
                     break;
 
+                case "forcehub":
+                    Diana.inHub = true;
+                    Utils.sendModMessage("Forced inHub to be true. Changes when you change lobbies.");
+                    break;
+
                 case "dev":
                     switch (strings[1].toLowerCase()) {
                         case "test":
