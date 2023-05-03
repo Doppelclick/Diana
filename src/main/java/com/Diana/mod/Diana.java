@@ -590,13 +590,13 @@ public class Diana {
         String message = event.message.getFormattedText();
         String unformatted = event.message.getUnformattedText();
 
-        Matcher p1 = Pattern.compile("^§\\S((\\[\\S+\\]\\s)?)(?<pm>\\S+) §r§ejoined the (party|dungeon group)").matcher(message); //§a[VIP] AA &r&ejoined the party.§r
-        Matcher p2 = Pattern.compile("§\\S(?<pm>\\S+) ((§r§ehas (been removed from the party | left the party)) | §r§ewas removed from your party because they disconnected | because they were offline)").matcher(message);
-        Matcher p3 = Pattern.compile("^§eYou have joined §r§\\S(?<pm>\\S+)'(s*) §r§eparty!").matcher(message);
+        Matcher p1 = Pattern.compile("^§\\S((\\[\\S+\\]\\s)?)(?<pm>\\S+) §r§ejoined the (party|dungeon group)").matcher(message); //§a[VIP] AA §r§ejoined the party.§r
+        Matcher p2 = Pattern.compile("§\\S((\\[\\S+\\]\\s)?)(?<pm>\\S+) ((§r§ehas (been removed from the party | left the party)) | §r§ewas removed from your party because they disconnected | because they were offline)").matcher(message);
+        Matcher p3 = Pattern.compile("^§eYou have joined §r§\\S((\\[\\S+\\]\\s)?)(?<pm>\\S+)'(s*) §r§eparty!").matcher(message); //§eYou have joined §r§b[MVP§r§d+§r§b] AAA's §r§eparty!§r
         Matcher p4 = Pattern.compile("^§eYou'll be partying with: (?<pm>.+)").matcher(message); //§eYou'll be partying with: §r§a[VIP] AA§r
-        Matcher p5 = Pattern.compile("^The party was transferred to (?<pm>\\S+) because (?<pl>\\S+) left").matcher(message); //todo: color codes and rank? ( \S]+?)
-        Matcher pl = Pattern.compile("Party Leader: ((\\[\\S+\\]\\s)?)(?<pl>\\S+) ●").matcher(unformatted);
-        Matcher pms = Pattern.compile("Party Members: (?<pms>(((\\[\\S+\\]\\s)?)\\S+ ● )+)").matcher(unformatted);
+        Matcher p5 = Pattern.compile("^The party was transferred to (?<pm>\\S+) because (?<pl>\\S+) left").matcher(message); //§eThe party was transferred to §r§7AAA §r§ebecause §r§b[MVP§r§d+§r§b] BBB §r§eleft§r
+        Matcher pl = Pattern.compile("Party Leader: ((\\[\\S+\\]\\s)?)(?<pl>\\S+) ●").matcher(unformatted); //§eParty Leader: §r§b[MVP§r§d+§r§b] AAA §r§a●§r
+        Matcher pms = Pattern.compile("Party Members: (?<pms>(((\\[\\S+\\]\\s)?)\\S+ ● )+)").matcher(unformatted); //§eParty Members: §r§7AAA§r§a ● §r
         Matcher burrow = Pattern.compile("§r§eYou dug out a Griffin Burrow! §r§7\\((?<number>\\d)/4\\)").matcher(message);
         Matcher inquis = Pattern.compile("\\[Diana\\] Inquis! \\[(?<one>(-?\\d{1,3})),(?<two>(-?\\d{1,3})),(?<three>(-?\\d{1,3}))\\] close to ").matcher(message);
         String sender = getSender(unformatted);
@@ -628,9 +628,9 @@ public class Diana {
             }
             inParty = true;
         } else if (p5.find()) {
-            String pm = StringUtils.stripControlCodes(p5.group("pm"));
+            String pm = StringUtils.stripControlCodes(p5.group("pm")).replaceAll("(\\[\\S+\\]\\s)", "");
             if (!partyMembers.contains(pm) &! pm.equals(mc.thePlayer.getName())) partyMembers.add(pm);
-            String ptl = StringUtils.stripControlCodes(p5.group("pl"));
+            String ptl = StringUtils.stripControlCodes(p5.group("pl")).replaceAll("(\\[\\S+\\]\\s)", "");
             partyMembers.remove(ptl);
             inParty = true;
         } else if (pl.find() && message.startsWith("§eParty Leader: ")) {

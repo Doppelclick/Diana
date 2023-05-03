@@ -17,7 +17,7 @@
 ### Burrow Waypoints:
 + Nearby burrows and a guess for the ancestral spade
 + Inquisitor waypoints shared through party/all chat - manageable ignore list - switch between receiving/sending from/to party/all chat
-+ Warp to the waypoint you are looking at using a keybind (controls menu) - travel destinations you have not unlocked yet will be blocked in the future, change this in the config file
++ Warp to the waypoint you are looking at using a keybind (controls menu) - travel destinations you have not unlocked yet will be blocked in the future, re-enable them in the config file
 
 ### Command
 + **/diana**
@@ -39,6 +39,7 @@
     + **add** [player (player1 player2 ...)] | Add one or multiple players to your ignore list (support for tab completions from players you have received inquisitor coords from)
     + **remove** [player] | Works in the same way as the above
   + **clear** | Clear burrow data
+  + **reload** | Reload config values from file
 
 - Config file: .minecraft\config\Diana.cfg
 

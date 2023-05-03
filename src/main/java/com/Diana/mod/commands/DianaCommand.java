@@ -24,7 +24,8 @@ public class DianaCommand extends CommandBase {
                 + " /diana receive §7| Change from who to receive inquis coords§r (" + allOrParty(Diana.receiveInqFromAll) + ")\n"
                 + " /diana beacon §7[help, block, beam, text]§r\n"
                 + " /diana ignore [list, add [player], remove [player]] §7| View / (add / remove players from) your inquis ignore list§r\n"
-                + " /diana clear §7| Clear burrows§r";
+                + " /diana clear §7| Clear burrows§r\n"
+                + " /diana reload §7| Reload config values from file§r";
     }
 
     static String beaconHelp() {
@@ -54,7 +55,7 @@ public class DianaCommand extends CommandBase {
     @Override
     public List<String> addTabCompletionOptions(ICommandSender sender, String[] strings, BlockPos pos) {
         if (strings.length == 1) {
-            return getListOfStringsMatchingLastWord(strings, "help", "toggle", "guess", "interpolation", "proximity", "messages", "send", "receive", "beacon", "ignore", "clear");
+            return getListOfStringsMatchingLastWord(strings, "help", "toggle", "guess", "interpolation", "proximity", "messages", "send", "receive", "beacon", "ignore", "clear", "reload");
         } else if ((strings.length == 2)) {
             if (strings[0].equalsIgnoreCase("beacon")) {
                 return getListOfStringsMatchingLastWord(strings, "help", "block", "beam", "text");
@@ -192,6 +193,11 @@ public class DianaCommand extends CommandBase {
                     Diana.waypoints = new HashMap<>();
                     Diana.foundBurrows = new ArrayList<>();
                     Utils.sendModMessage("Cleared Waypoints and found burrows");
+                    break;
+
+                case "reload":
+                    config.cfgreload();
+                    Utils.sendModMessage("Reloaded config");
                     break;
 
                 case "dev":
