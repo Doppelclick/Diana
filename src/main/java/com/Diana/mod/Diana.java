@@ -600,7 +600,7 @@ public class Diana {
         Matcher p5 = Pattern.compile("^The party was transferred to (?<pm>\\S+) because (?<pl>\\S+) left").matcher(message); //§eThe party was transferred to §r§7AAA §r§ebecause §r§b[MVP§r§d+§r§b] BBB §r§eleft§r
         Matcher pl = Pattern.compile("Party Leader: ((\\[\\S+\\]\\s)?)(?<pl>\\S+) ●").matcher(unformatted); //§eParty Leader: §r§b[MVP§r§d+§r§b] AAA §r§a●§r
         Matcher pms = Pattern.compile("Party Members: (?<pms>(((\\[\\S+\\]\\s)?)\\S+ ● )+)").matcher(unformatted); //§eParty Members: §r§7AAA§r§a ● §r
-        Matcher burrow = Pattern.compile("§r§eYou dug out a Griffin Burrow! §r§7\\((?<number>\\d)/4\\)").matcher(message);
+        Matcher burrow = Pattern.compile("§r§eYou dug out a Griffin Burrow! §r§7\\((?<number>\\d)/4\\)").matcher(message); //§r§eYou dug out a Griffin Burrow! §r§7(1/4)§r§7
         Matcher inquis = Pattern.compile("\\[Diana\\] Inquis! \\[(?<one>(-?\\d{1,3})),(?<two>(-?\\d{1,3})),(?<three>(-?\\d{1,3}))\\] close to ").matcher(message);
         String sender = getSender(unformatted);
         if (message.contains("§r§9Party §8>") && sender != null) {
@@ -669,7 +669,7 @@ public class Diana {
                     return;
                 }
             }
-        } else if (burrow.find() || message.contains("§r§eYou finished the Griffin burrow chain! §r§7(4/4)§r") || message.contains("§r§eFollow the arrows to find the §r§6treasure§r§e!")) {
+        } else if (message.contains("§r§eYou dug out a Griffin Burrow! §r§7(") || message.contains("§r§eYou finished the Griffin burrow chain! §r§7(4/4)§r")) { // message.contains("§r§eFollow the arrows to find the §r§6treasure§r§e!") -> unnecessary since the burrow regex is triggered too at the same time, not using burrow.find here because it only works once (?)
             resetRender();
             arrowStart = null;
             arrowDir = null;
@@ -688,14 +688,12 @@ public class Diana {
                 }
                 dugburrow = new ArrayList<>();
             }
-            if (!message.contains("§r§6treasure§r")) { //todo: can't remember if this is sent when chain is completed, might change later
-                try {
-                    lastdug = burrow.find() ? (Integer.parseInt(burrow.group("number")) % 4 + 1) : 1;
-                } catch (NumberFormatException ne) {
-                    ne.printStackTrace();
-                }
+            try {
+                lastdug = burrow.find() ? (Integer.parseInt(burrow.group("number")) % 4 + 1) : 1;
+            } catch (NumberFormatException ne) {
+                ne.printStackTrace();
             }
-        } else if (message.contains("§7You were killed by ")) {
+        } else if (message.contains("§7You were killed by ")) { //§r§c ☠ §r§7You were killed by §r§2Exalted Gaia Construct§r§7§r§7.§r
             if (!dugburrow.isEmpty()) {
                 for (BlockPos b : dugburrow) {
                     if (Diana.burrow != null) {
