@@ -591,7 +591,7 @@ public class Diana {
         String message = event.message.getFormattedText();
         String unformatted = StringUtils.stripControlCodes(event.message.getUnformattedText());
 
-        Matcher lobby = Pattern.compile("\\{\"server\":\"(?<server>\\S+)\",\"gametype\":\"SKYBLOCK\",\"mode\":\"(?<mode>\\S+)\",\"map\":\"(?<map>\\S+)\"\\}").matcher(message);
+        Matcher lobby = Pattern.compile("§f\\{\"server\":\"(?<server>\\S+)\",\"gametype\":\"SKYBLOCK\",\"mode\":\"(?<mode>\\S+)\",\"map\":\"(?<map>\\S+)\"\\}§r").matcher(message); //§f{"server":"mini123AB","gametype":"SKYBLOCK","mode":"hub","map":"Hub"}§r
 
         Matcher p1 = Pattern.compile("^§\\S((\\[\\S+\\]\\s)?)(?<pm>\\S+) §r§ejoined the (party|dungeon group)").matcher(message); //§a[VIP] AA §r§ejoined the party.§r
         Matcher p2 = Pattern.compile("§\\S((\\[\\S+\\]\\s)?)(?<pm>\\S+) ((§r§ehas (been removed from the party | left the party)) | §r§ewas removed from your party because they disconnected | because they were offline)").matcher(message);
@@ -605,12 +605,13 @@ public class Diana {
         String sender = getSender(unformatted);
         if (message.contains("§r§9Party §8>") && sender != null) {
             if (!partyMembers.contains(sender) &! sender.equals(mc.thePlayer.getName())) partyMembers.add(sender);
-            Utils.sendModMessage(unformatted);
             inParty = true;
         }
         if (lobby.find() &! inHub) {
-            inHub = true;
-            logger.info("Joined Skyblock hub");
+            if (lobby.group("mode").equals("hub")) {
+                inHub = true;
+                logger.info("Joined Skyblock hub");
+            }
         } else if (message.contains("You are not currently in a party.") || message.contains("You have been kicked from the party by") || message.contains("You left the party.") ||
                 message.contains("The party was disbanded because all invites expired and the party was empty") || message.contains("§r§ehas disbanded the party!")) {
             partyMembers.clear();
