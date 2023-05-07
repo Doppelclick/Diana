@@ -47,7 +47,7 @@
 [![Discord](https://img.shields.io/badge/Discord-Doppelclick%235993-blue?style=for-the-badge&logo=appveyor)](https://discord.com/channels/@me)
 
 ### Credits:
-Took a lot of stuff from DungeonRooms (partly from NEU), the calculation from Soopy (I tested it to be the most accurate), the Packet Handling from Luna, proximity values from Skytils
+Took a lot of stuff from DungeonRooms (partly from NEU), the calculation from Soopy (I tested it to be the most accurate), Hub detection from Danker's Skyblock mod, the Packet Handling from Luna, proximity values from Skytils
 
 ### Download:
 <p align="left">
