@@ -9,19 +9,16 @@ buildscript {
     }
     dependencies {
         classpath "com.github.debuggingss:ForgeGradle:FG_2.1-SNAPSHOT"
-        classpath "com.github.jengelman.gradle.plugins:shadow:6.1.0"
     }
 }
 apply plugin: "java"
 apply plugin: "net.minecraftforge.gradle.forge"
-apply plugin: "com.github.johnrengelman.shadow"
 
-version = "0.1.7"
+version = "0.1.8"
 group = "com.Diana"
 archivesBaseName = "Diana"
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
 compileJava.options.encoding = "UTF-8"
 
 
@@ -56,29 +53,6 @@ dependencies {
     annotationProcessor "org.ow2.asm:asm-tree:6.2"
     annotationProcessor "org.ow2.asm:asm-util:6.2"
     annotationProcessor "org.apache.logging.log4j:log4j-core:2.0-beta9"
-}
-
-shadowJar {
-    archiveName = tasks.jar.archiveName
-    classifier = ""
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    exclude("dummyThing")
-    exclude("META-INF/maven/")
-    exclude("META-INF/nar/")
-    exclude("module-info.class")
-    exclude("META-INF/versions/")
-    exclude("LICENSE.txt")
-
-    configurations = [project.configurations.embed]
-}
-
-reobfJar.dependsOn tasks.shadowJar
-
-reobf {
-    shadowJar {
-        mappingType = "SEARGE"
-    }
 }
 
 processResources {
