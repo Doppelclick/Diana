@@ -61,7 +61,7 @@ import java.util.regex.Pattern;
 public class Diana {
     public static final String Name = "Diana";
     public static final String V = "0.1.8";
-    public static String chatTitle = "§3[Diana] §r";
+    public static String chatTitle = "§3[Diana]§r ";
     public static final Logger logger = LogManager.getLogger(Name);
     public static KeyBinding[] keyBindings = new KeyBinding[1];
     public static List<Warp> warps = new ArrayList<>(Arrays.asList(
