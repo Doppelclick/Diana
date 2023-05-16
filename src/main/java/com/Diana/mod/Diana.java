@@ -744,9 +744,9 @@ public class Diana {
     }
 
     public static double maxDistance(Vec3 pos, Vec3 target) {
-        double x = Math.abs(Math.abs(target.xCoord) - Math.abs(pos.xCoord));
-        double y = Math.abs(Math.abs(target.yCoord) - Math.abs(pos.yCoord));
-        double z = Math.abs(Math.abs(target.zCoord) - Math.abs(pos.zCoord));
+        double x = Math.abs(target.xCoord - pos.xCoord);
+        double y = Math.abs(target.yCoord - pos.yCoord);
+        double z = Math.abs(target.zCoord - pos.zCoord);
         return Math.max(x, Math.max(y, z));
     }
 
