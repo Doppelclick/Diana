@@ -60,7 +60,7 @@ import java.util.regex.Pattern;
 @Mod(modid = Diana.Name, version = Diana.V)
 public class Diana {
     public static final String Name = "Diana";
-    public static final String V = "0.1.8";
+    public static final String V = "0.1.9";
     public static String chatTitle = "§3[Diana]§r ";
     public static final Logger logger = LogManager.getLogger(Name);
     public static KeyBinding[] keyBindings = new KeyBinding[1];
