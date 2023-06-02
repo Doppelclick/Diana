@@ -1,11 +1,14 @@
 # Diana Solver
 
-<p align="left">
+<p>
   <a href="https://github.com/Doppelclick/Diana/releases/latest" target="_blank">
-    <img alt="version" src="https://img.shields.io/github/release/Doppelclick/Diana?color=%239f00ff&style=for-the-badge" />
+    <img alt="version" src="https://img.shields.io/github/release/Doppelclick/Diana?color=blue&style=for-the-badge" />
+  </a>
+  <a href="https://modrinth.com/mod/diana" target="_blank">
+    <img alt="version" src="https://img.shields.io/badge/dynamic/json?label=Modrinth%20Downloads&query=downloads&url=https%3A%2F%2Fapi.modrinth.com%2Fv2%2Fproject%2Fdiana&color=brightgreen&style=for-the-badge"/>
   </a>
   <a href="https://github.com/Doppelclick/Diana/releases/latest" target="_blank">
-    <img alt="downloads" src="https://img.shields.io/github/downloads/Doppelclick/Diana/total?color=%239f00ff&style=for-the-badge" />
+    <img alt="downloads" src="https://img.shields.io/github/downloads/Doppelclick/Diana/total?label=Github%20Downloads&suffix=&color=black&style=for-the-badge" />
   </a>
   <a href="https://discord.com/channels/@me" target="_blank">
     <img alt="discord" src="https://img.shields.io/badge/Discord-Doppelclick%235993-blue?style=for-the-badge&logo=appveyor" />
@@ -50,7 +53,7 @@
 Took a lot of stuff from DungeonRooms (partly from NEU), the calculation from Soopy (I tested it to be the most accurate), Hub detection from Danker's Skyblock mod, the Packet Handling from Luna, proximity values from Skytils
 
 ### Download:
-<p align="left">
+<p>
   <a href="https://github.com/Doppelclick/Diana/releases/latest" target="_blank">
     <img alt="download.png" src="https://img.shields.io/badge/%E2%A0%80-Download-brightgreen?style=for-the-badge&logo=appveyor" />
   </a>
