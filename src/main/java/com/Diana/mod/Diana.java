@@ -425,7 +425,7 @@ public class Diana {
      */
     @SubscribeEvent
     void worldRender(RenderWorldLastEvent event) {
-        if (!toggle &! block &! beam &! text |! doingDiana) return;
+        if (!toggle |! block &! beam &! text |! doingDiana) return;
         EntityPlayerSP player = mc.thePlayer;
         if (player == null) return;
         double distance = 129600;
