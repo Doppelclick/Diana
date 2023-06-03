@@ -60,7 +60,7 @@ import java.util.regex.Pattern;
 @Mod(modid = Diana.Name, version = Diana.V)
 public class Diana {
     public static final String Name = "Diana";
-    public static final String V = "0.1.9";
+    public static final String V = "0.2";
     public static String chatTitle = "§3[Diana]§r ";
     public static final Logger logger = LogManager.getLogger(Name);
     public static KeyBinding[] keyBindings = new KeyBinding[1];
@@ -592,7 +592,7 @@ public class Diana {
     void chat(ClientChatReceivedEvent event) {
         if (!toggle || event.type != 0) return;
         String message = event.message.getFormattedText();
-        String unformatted = StringUtils.stripControlCodes(event.message.getUnformattedText());
+        String unformatted = event.message.getUnformattedText();
 
         Matcher p1 = Pattern.compile("^§\\S((\\[\\S+\\]\\s)?)(?<pm>\\S+) §r§ejoined the (party|dungeon group)").matcher(message); //§a[VIP] AA §r§ejoined the party.§r
         Matcher p2 = Pattern.compile("§\\S((\\[\\S+\\]\\s)?)(?<pm>\\S+) ((§r§ehas (been removed from the party | left the party)) | §r§ewas removed from your party because they disconnected | because they were offline)").matcher(message);
@@ -602,7 +602,7 @@ public class Diana {
         Matcher pl = Pattern.compile("Party Leader: ((\\[\\S+\\]\\s)?)(?<pl>\\S+) ●").matcher(unformatted); //§eParty Leader: §r§b[MVP§r§d+§r§b] AAA §r§a●§r
         Matcher pms = Pattern.compile("Party Members: (?<pms>(((\\[\\S+\\]\\s)?)\\S+ ● )+)").matcher(unformatted); //§eParty Members: §r§7AAA§r§a ● §r
         Matcher burrow = Pattern.compile("§r§eYou dug out a Griffin Burrow! §r§7\\((?<number>\\d)/4\\)").matcher(message); //§r§eYou dug out a Griffin Burrow! §r§7(1/4)§r§7
-        Matcher inquis = Pattern.compile("\\[Diana\\] Inquis! \\[(?<one>(-?\\d{1,3})),(?<two>(-?\\d{1,3})),(?<three>(-?\\d{1,3}))\\] at ⏣ ").matcher(message);
+        Matcher inquis = Pattern.compile("\\[Diana\\] Inquis! \\[(?<one>(-?\\d{1,3})),(?<two>(-?\\d{1,3})),(?<three>(-?\\d{1,3}))\\] at ⏣").matcher(unformatted);
         String sender = getSender(unformatted);
         if (message.contains("§r§9Party §8>") && sender != null) {
             if (!partyMembers.contains(sender) &! sender.equals(mc.thePlayer.getName())) partyMembers.add(sender);
