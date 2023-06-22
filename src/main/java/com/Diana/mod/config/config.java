@@ -124,6 +124,7 @@ public class config {
         if (!hasKey("warps", "da")) writeBooleanConfig("warps", "da", true);
         if (!hasKey("warps", "crypt")) writeBooleanConfig("warps", "crypt", true);
         if (!hasKey("warps", "museum")) writeBooleanConfig("warps", "museum", true);
+        if (!hasKey("warps", "wizard")) writeBooleanConfig("warps", "wizard", true);
 
         if (!hasKey("data", "InquisIgnoreList")) writeStringListConfig("data", "InquisIgnoreList", new ArrayList<>());
 
@@ -143,6 +144,7 @@ public class config {
         if (!getBoolean("warps", "da")) Diana.Warp.set("da", false);
         if (!getBoolean("warps", "crypt")) Diana.Warp.set("crypt", false);
         if (!getBoolean("warps", "museum")) Diana.Warp.set("museum", false);
+        if (!getBoolean("warps", "wizard")) Diana.Warp.set("wizard", false);
 
         Diana.ignoredPlayers = getStringList("data", "InquisIgnoreList");
 

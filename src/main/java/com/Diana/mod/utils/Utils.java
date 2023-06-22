@@ -72,13 +72,13 @@ public class Utils {
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
-                Utils.playSound("note.pling", 1, 0.7f);
+                playSound("note.pling", 1, 0.7f);
             }
         }, 180);
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
-                Utils.playSound("note.pling", 1, 0.8f);
+                playSound("note.pling", 1, 0.8f);
             }
         }, 360);
     }

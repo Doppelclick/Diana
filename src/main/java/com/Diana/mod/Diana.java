@@ -69,7 +69,8 @@ public class Diana {
             new Warp(new Vec3(-250,129,-45), "castle", true),
             new Warp(new Vec3(91,74,173), "da", true),
             new Warp(new Vec3(-162,61,-99), "crypt", true),
-            new Warp(new Vec3(-76,75,80), "museum", true)));
+            new Warp(new Vec3(-76,75,80), "museum", true),
+            new Warp(new Vec3(42, 121, 69), "wizard", true)));
     public static String lastwarp = "undefined";
     static HashMap<Integer, HashMap<Integer, Integer>> hubdata = new HashMap<>();
     public static HashMap<Integer, Color> waypointColors = new HashMap<Integer, Color>(){{
