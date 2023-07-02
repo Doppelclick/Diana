@@ -11,7 +11,7 @@
     <img alt="downloads" src="https://img.shields.io/github/downloads/Doppelclick/Diana/total?label=Github%20Downloads&suffix=&color=black&style=for-the-badge" />
   </a>
   <a href="https://discord.com/channels/@me" target="_blank">
-    <img alt="discord" src="https://img.shields.io/badge/Discord-Doppelclick%235993-blue?style=for-the-badge&logo=appveyor" />
+    <img alt="discord" src="https://img.shields.io/badge/Discord-Doppelclick-blue?style=for-the-badge&logo=appveyor" />
   </a>
 </p>
 
@@ -46,8 +46,8 @@
 
 - Config file: .minecraft\config\Diana.cfg
 
-### Discord:
-[![Discord](https://img.shields.io/badge/Discord-Doppelclick%235993-blue?style=for-the-badge&logo=appveyor)](https://discord.com/channels/@me)
+### Contact:
+[![Discord](https://img.shields.io/badge/Discord-Doppelclick-blue?style=for-the-badge&logo=appveyor)](https://discord.com/channels/@me)
 
 ### Credits:
 Took a lot of stuff from DungeonRooms (partly from NEU), the calculation from Soopy (I tested it to be the most accurate), Hub detection from Danker's Skyblock mod, the Packet Handling from Luna, proximity values from Skytils
