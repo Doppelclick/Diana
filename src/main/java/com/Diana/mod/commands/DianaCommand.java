@@ -2,6 +2,7 @@ package com.Diana.mod.commands;
 
 import com.Diana.mod.Diana;
 import com.Diana.mod.config.config;
+import com.Diana.mod.handlers.SoopyServer;
 import com.Diana.mod.utils.Utils;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
@@ -182,6 +183,10 @@ public class DianaCommand extends CommandBase {
                                 Utils.sendModMessage("§cInvalid args!§r /diana ignore [list, add [player], remove [player]]");
                         }
                     }
+                    break;
+
+                case "server":
+                    new SoopyServer.connectToServer().start();
                     break;
 
                 case "clear":

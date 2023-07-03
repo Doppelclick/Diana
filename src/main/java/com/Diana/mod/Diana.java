@@ -409,7 +409,7 @@ public class Diana {
         if (burrow != null && useOld) y = burrow.yCoord;
         burrow = new Vec3(x, y, z);
         if (messages &! echo) Utils.sendModMessage("[" + Math.round(burrow.xCoord) + "," + Math.round(burrow.yCoord) + "," + Math.round(burrow.zCoord) + "] " + (int)Math.round(distance));
-        if (!oldparticles.isEmpty() || (arrowStart != null && arrowDir != null)) intercept();
+        intercept();
     }
 
     double total(Vec3 v) {
@@ -690,7 +690,9 @@ public class Diana {
                 ne.printStackTrace();
             }
             arrow = lastdug != 1;
-        } else if (message.contains("§7You were killed by ")) { //§r§c ☠ §r§7You were killed by §r§2Exalted Gaia Construct§r§7§r§7.§r
+        } else if (message.contains("§7You were killed by ")) { //§r§c ☠ §r§7You were killed by §r§2Exalted Gaia Construct§r§7§r§7.
+            arrowStart = null;
+            arrowDir = null;
             oldparticles = new ArrayList<>();
             if (!dugburrow.isEmpty()) {
                 for (BlockPos b : dugburrow) {
@@ -757,15 +759,16 @@ public class Diana {
         Vec3 playerp = player.getPositionVector();
 
         Vec3 p1 = particles.get(0);
-        Vec3 p2 = particles.get(1).subtract(p1);
+        Vec3 p2 = particles.get(particles.size() - 1).subtract(p1);
         Vec3 a1;
         Vec3 a2;
         if (oldparticles.size() > 3) {
             a1 = oldparticles.get(0);
-            a2 = oldparticles.get(1).subtract(a1);
+            a2 = oldparticles.get(oldparticles.size() - 1).subtract(a1);
         } else if (arrowStart != null && arrowDir != null) {
             a1 = arrowStart;
             a2 = arrowDir;
+            System.out.println("Used arrow");
         } else return;
 
         /*
