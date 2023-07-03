@@ -18,7 +18,8 @@
 ## Diana burrow waypoints:
 
 ### Burrow Waypoints:
-+ Nearby burrows and a guess for the ancestral spade
++ Guesses burrow position based on ancestral spade particles, calculates an intercept using burrow arrow or last ancestral spade use (**Tip: Look up or down for more accuracy**)
++ Nearby burrow detection
 + Inquisitor waypoints shared through party/all chat - manageable ignore list - switch between receiving/sending from/to party/all chat
 + Warp to the waypoint you are looking at using a keybind (controls menu) - travel destinations you have not unlocked yet will be blocked in the future, re-enable them in the config file
 
