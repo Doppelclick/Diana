@@ -2,7 +2,6 @@ package com.Diana.mod.commands;
 
 import com.Diana.mod.Diana;
 import com.Diana.mod.config.config;
-import com.Diana.mod.handlers.SoopyServer;
 import com.Diana.mod.utils.Utils;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
