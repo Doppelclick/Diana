@@ -185,10 +185,6 @@ public class DianaCommand extends CommandBase {
                     }
                     break;
 
-                case "server":
-                    new SoopyServer.connectToServer().start();
-                    break;
-
                 case "clear":
                     Diana.waypoints = new HashMap<>();
                     Utils.sendModMessage("Cleared Waypoints");

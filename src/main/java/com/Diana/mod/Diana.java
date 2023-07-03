@@ -768,7 +768,6 @@ public class Diana {
         } else if (arrowStart != null && arrowDir != null) {
             a1 = arrowStart;
             a2 = arrowDir;
-            System.out.println("Used arrow");
         } else return;
 
         /*
