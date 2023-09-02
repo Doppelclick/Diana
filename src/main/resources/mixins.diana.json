@@ -1,0 +1,9 @@
+{
+    "minVersion": "0.8.0",
+    "compatibilityLevel": "JAVA_8",
+    "package": "diana.mixins",
+    "refmap": "mixins.${modID}.refmap.json",
+    "client": [
+        "MixinNetworkManager"
+    ]
+}

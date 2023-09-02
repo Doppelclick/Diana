@@ -25,30 +25,17 @@
 
 ### Command
 + **/diana**
-  + **help** | Help message
-  + **toggle** | Toggle the mod
-  + **guess** | Toggle burrow guess
-  + **interpolation** | Toggle interpolation for when the position of the guess burrow changes
-  + **proximity** | Toggle nearby burrow detection
-  + **messages** | Toggle useless messages (default off)
-  + **send** | Change who to send inquis coords to
-  + **receive** | Change from who to receive inquis coords
-  + **beacon** [help, block, beam, text] | Change the appearance of waypoint beacons
-    + **help** | Help message
-    + **block** | Toggle beacon block
-    + **beam** | Toggle beacon beam
-    + **text** | Toggle beacon text
-  + **ignore** [list, add [player], remove [player]] | View / (add / remove players from) your inquis ignore list
-    + **list** | Lists all ignored players
-    + **add** [player (player1 player2 ...)] | Add one or multiple players to your ignore list (support for tab completions from players you have received inquisitor coords from)
-    + **remove** [player] | Works in the same way as the above
-  + **clear** | Clear burrow data
-  + **reload** | Reload config values from file
+  + help | Lists all commands
+  + ignore [list, add [player], remove [player]] | View / (add / remove players from) your inquis ignore list
+  + clear | Clear burrows
+  + reload | Reload config values from file
+  + enablewarp [name] | Enable a warp, that had previously been disabled automatically
 
 - Config file: .minecraft\config\Diana.cfg
 
 ### Contact:
 [![Discord](https://img.shields.io/badge/Discord-Doppelclick-blue?style=for-the-badge&logo=appveyor)](https://discord.com/channels/@me)
++ /msg user:558642345302687764 message:Hi!
 
 ### Credits:
 Took a lot of stuff from DungeonRooms (partly from NEU), the calculation from Soopy (I tested it to be the most accurate), Hub detection from Danker's Skyblock mod, the Packet Handling from Luna, proximity values from Skytils

@@ -1,16 +1,16 @@
 [
-{
-  "modid": "Diana",
-  "name": "Diana",
-  "description": "A tool that makes Hypixel Skyblock's Mythological Ritual more enjoyable",
-  "version": "${version}",
-  "mcversion": "${mcversion}",
-  "url": "https://github.com/Doppelclick/Diana",
-  "updateUrl": "https://github.com/Doppelclick/Diana/releases/latest",
-  "authorList": ["Doppelclick"],
-  "credits": "NEU, Luna, DungeonRooms, Soopy, Skytils",
-  "logoFile": "assets/diana/griffin.png",
-  "screenshots": [],
-  "dependencies": []
-}
+    {
+        "modid": "${modID}",
+        "name": "${modName}",
+        "description": "A tool that makes Hypixel Skyblock's Mythological Ritual more enjoyable.",
+        "version": "${version}",
+        "mcversion": "${mcversion}",
+        "url": "https://github.com/Doppelclick/Diana",
+        "updateUrl": "https://github.com/Doppelclick/Diana/releases/latest",
+        "authorList": ["Doppelclick"],
+        "credits": "NEU, Luna, DungeonRooms, Soopy, Skytils",
+        "logoFile": "assets/diana/griffin.png",
+        "screenshots": [],
+        "dependencies": []
+    }
 ]
