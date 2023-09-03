@@ -30,6 +30,7 @@ object PacketHandler {
                     val down = BlockPos(pos).down()
                     if (particle.particleType == EnumParticleTypes.FIREWORKS_SPARK && particle.particleSpeed == 0f && particle.particleCount == 1 && Burrows.echo && Config.guess && particle.xOffset == 0f && particle.yOffset == 0f && particle.zOffset == 0f) {
                         Burrows.particles.add(pos)
+                        Burrows.calcBurrow()
                     } else if (particle.particleType == EnumParticleTypes.REDSTONE && particle.particleSpeed == 1f && particle.particleCount == 0 && Burrows.arrow && Config.guess) {
                         if (Burrows.arrowStart == null) {
                             Burrows.arrowStart = pos
@@ -63,7 +64,6 @@ object PacketHandler {
                             event.packet.x,
                             event.packet.y,
                             event.packet.z)] = event.packet.pitch
-                        Burrows.calcBurrow()
                     }
                 }
             }

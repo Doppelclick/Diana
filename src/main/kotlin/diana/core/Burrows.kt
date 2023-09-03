@@ -13,6 +13,7 @@ import net.minecraft.util.Vec3
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import kotlin.math.round
+import kotlin.math.roundToInt
 
 object Burrows {
     private val hubData: Map<Int, Map<Int, Int>> = try {
@@ -40,13 +41,13 @@ object Burrows {
 
     var selected: Vec3? = null
     var burrow: Vec3?
-        get() { return interceptPos ?: guessPos }
+        get() = interceptPos?.let { if (Config.interceptAsFullBlock) Vec3(BlockPos(it)) else it } ?: guessPos
         set(pos) {
             guessPos = pos
             interceptPos = pos
         }
-    private var guessPos: Vec3? = null
-    private var interceptPos: Vec3? = null
+    var guessPos: Vec3? = null
+    var interceptPos: Vec3? = null
     var lastDug: Int = 1
     var waypoints: ArrayList<Waypoint> = arrayListOf()
     var foundBurrows: ArrayList<BlockPos> = arrayListOf()
@@ -69,11 +70,17 @@ object Burrows {
         val y = getHeight(round(x).toInt(), round(z).toInt()) ?: burrow?.yCoord ?: (lastSound.yCoord + changes.yCoord * distance)
 
         guessPos = Vec3(x, y, z)
-        if (Config.messages && !echo) Utils.modMessage(
+        if (Config.messages && !echo) Utils.modMessage( //TODO: Fix !echo
             "[" + Math.round(x) + "," + Math.round(
                 guessPos!!.yCoord
             ) + "," + Math.round(z) + "] " + Math.round(distance).toInt()
         )
+        val relGuess = guessPos!!.subtract(mc.thePlayer.positionVector)
+        interceptPos?.subtract(mc.thePlayer.positionVector)?.run {
+            if (Utils.percentageDifference(relGuess.xCoord, this.xCoord) > Config.guessTolerance ||
+                Utils.percentageDifference(relGuess.zCoord, this.zCoord) > Config.guessTolerance
+            ) interceptPos = null
+        }
         intercept()
     }
 
@@ -96,21 +103,15 @@ object Burrows {
         //The following calculation is from Synthesis made by Luna
         val a = v1.zCoord / v1.xCoord * p1.xCoord - p1.zCoord
         val b = v2.zCoord / v2.xCoord * p2.xCoord - p2.zCoord
-        val x = (a - b) / (v1.zCoord / v1.xCoord - v2.zCoord / v2.xCoord)
-        val z = v1.zCoord / v1.xCoord * x - a
+        val x = ((a - b) / (v1.zCoord / v1.xCoord - v2.zCoord / v2.xCoord)).apply { if (this.isNaN()) return }
+        val z = (v1.zCoord / v1.xCoord * x - a).apply { if (this.isNaN()) return }
 
-        val intercept = Vec3(
-            if (Config.interceptAsFullBlock) round(x) else x,
-            getHeight(round(x).toInt(), round(z).toInt()) ?: burrow?.yCoord ?: 60.0,
-            if (Config.interceptAsFullBlock) round(z) else z)
+        val intercept = Vec3(x, getHeight(x.roundToInt(), z.roundToInt()) ?: burrow?.yCoord ?: 60.0, z)
         if (guessPos != null &&! Config.ignoreAccuracyChecks) {
             val relGuess = guessPos!!.subtract(playerPos)
             val relIntercept = intercept.subtract(playerPos)
             if (Utils.percentageDifference(relGuess.xCoord, relIntercept.xCoord) > Config.guessTolerance ||
                 Utils.percentageDifference(relGuess.zCoord, relIntercept.zCoord) > Config.guessTolerance) {
-                val relInterceptOld = interceptPos?.subtract(playerPos) ?: return
-                if (Utils.percentageDifference(relGuess.xCoord, relInterceptOld.xCoord) > Config.guessTolerance ||
-                    Utils.percentageDifference(relGuess.zCoord, relInterceptOld.zCoord) > Config.guessTolerance) interceptPos = null
                 return
             }
         }

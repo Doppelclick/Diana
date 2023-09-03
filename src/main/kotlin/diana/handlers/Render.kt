@@ -63,7 +63,7 @@ object Render {
                 if (Config.guess && guessPos != null) listOf(guessPos)
                 else listOf()
             ).minByOrNull { Utils.visualDistanceTo(it, mc.thePlayer) }?.takeIf { Utils.visualDistanceTo(it, mc.thePlayer) < 129600 && it.distanceTo(mc.thePlayer.positionVector) > 15 }?.let {
-                if (it === guessPos) burrow else it
+                if (it == guessPos) burrow else it
             }
         }
 

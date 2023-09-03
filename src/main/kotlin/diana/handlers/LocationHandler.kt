@@ -28,6 +28,7 @@ object LocationHandler {
 
     @SubscribeEvent
     fun serverConnect(event: FMLNetworkEvent.ClientConnectedToServerEvent) {
+        if (onHypixel) return
         mc.currentServerData?.run {
             if (this.serverIP.lowercase(Locale.getDefault()).contains("hypixel.")) {
                 onHypixel = true

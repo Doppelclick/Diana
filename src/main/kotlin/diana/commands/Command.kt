@@ -128,10 +128,7 @@ class Command : CommandBase() {
                     }
 
                     "printdata" -> {
-                        Utils.modMessage("Arrow: ${Burrows.arrowStart} ${Burrows.arrowDir}\n" +
-                                "Particles: ${Burrows.particles}\n" +
-                                "Old Particles: ${Burrows.oldParticles}\n" +
-                                "Pitch: ${Burrows.sounds}")
+                        Utils.modMessage("${Burrows.guessPos} \n${Burrows.interceptPos}")
                     }
 
                     else -> {
