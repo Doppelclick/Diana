@@ -11,8 +11,11 @@ import java.io.InputStreamReader
 import java.net.URL
 import java.util.concurrent.Executors
 
-class Updater : Thread() { //Todo: Fix sleep()
+class Updater : Thread() {
+    var lastCheck: Long = 0L
     override fun run() {
+        if (System.currentTimeMillis() + 60000 < lastCheck) return
+        lastCheck = System.currentTimeMillis()
         while (Diana.mc.thePlayer == null) {
             sleep(100)
         }
@@ -49,7 +52,6 @@ class Updater : Thread() { //Todo: Fix sleep()
             println("An error has occurred connecting to github")
             e.printStackTrace()
         }
-        executor.shutdown()
     }
 
     companion object {
