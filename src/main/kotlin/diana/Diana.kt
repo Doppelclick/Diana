@@ -27,7 +27,7 @@ class Diana {
     companion object {
         const val modName = "Diana"
         const val modID = "diana"
-        const val version = "0.4.2"
+        const val version = "0.4.3"
         const val chatTitle = "§3[Diana]§r "
         val mc = Minecraft.getMinecraft()
         val warps = arrayOf(

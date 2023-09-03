@@ -14,6 +14,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import kotlin.math.round
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 object Burrows {
     private val hubData: Map<Int, Map<Int, Int>> = try {
@@ -75,12 +76,13 @@ object Burrows {
                 guessPos!!.yCoord
             ) + "," + Math.round(z) + "] " + Math.round(distance).toInt()
         )
-        val relGuess = guessPos!!.subtract(mc.thePlayer.positionVector)
-        interceptPos?.subtract(mc.thePlayer.positionVector)?.run {
-            if (Utils.percentageDifference(relGuess.xCoord, this.xCoord) > Config.guessTolerance ||
-                Utils.percentageDifference(relGuess.zCoord, this.zCoord) > Config.guessTolerance
-            ) interceptPos = null
+        interceptPos?.distanceTo(guessPos)?.run {
+            val relGuess = sqrt(guessPos!!.distanceTo(mc.thePlayer.positionVector))
+            if (this > (relGuess + Config.guessTolerance)) {
+                interceptPos = null
+            }
         }
+
         intercept()
     }
 
@@ -108,10 +110,8 @@ object Burrows {
 
         val intercept = Vec3(x, getHeight(x.roundToInt(), z.roundToInt()) ?: burrow?.yCoord ?: 60.0, z)
         if (guessPos != null &&! Config.ignoreAccuracyChecks) {
-            val relGuess = guessPos!!.subtract(playerPos)
-            val relIntercept = intercept.subtract(playerPos)
-            if (Utils.percentageDifference(relGuess.xCoord, relIntercept.xCoord) > Config.guessTolerance ||
-                Utils.percentageDifference(relGuess.zCoord, relIntercept.zCoord) > Config.guessTolerance) {
+            val relGuess = sqrt(guessPos!!.distanceTo(playerPos))
+            if (intercept.distanceTo(guessPos) > (relGuess + Config.guessTolerance)) {
                 return
             }
         }

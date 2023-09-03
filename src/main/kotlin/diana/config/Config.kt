@@ -48,10 +48,10 @@ object Config : Vigilant(File("./config/${Diana.modName}.toml"), "Diana", sortin
         description = "Tolerance for intercept calculation to prevent 'flickering'.",
         type = PropertyType.DECIMAL_SLIDER,
         minF = 0f,
-        maxF = 1000f,
+        maxF = 100f,
         hidden = true
     )
-    var guessTolerance = 10f
+    var guessTolerance = 5f
 
     @Property(
         category = "General",
@@ -104,6 +104,14 @@ object Config : Vigilant(File("./config/${Diana.modName}.toml"), "Diana", sortin
     )
     var receiveInq = 2
 
+    @Property(
+        category = "Inquisitor",
+        name = "Receive Inquisitor from patcher",
+        description = "When someone uses /patcher sendcoords  it will act the same as a Diana inquis waypoint.",
+        type = PropertyType.SWITCH
+
+    )
+    var receiveInqFromPatcher = false
 
     @Property(
         category = "Inquisitor",

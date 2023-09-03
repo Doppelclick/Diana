@@ -63,10 +63,6 @@ object Utils {
             }
         }
 
-    fun percentageDifference(a: Double, b: Double): Float = percentageDifference(a.toFloat(), b.toFloat())
-
-    fun percentageDifference(a: Float, b: Float): Float = abs(a - b) / ((a + b) / 2) * 100f
-
     fun visualDistanceTo(burrow: Vec3, player: EntityPlayerSP): Double {
         val playerp = player.positionVector.addVector(0.0, player.getEyeHeight().toDouble(), 0.0)
         var yaw = player.rotationYaw % 360

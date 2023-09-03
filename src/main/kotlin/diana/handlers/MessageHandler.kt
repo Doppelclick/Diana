@@ -26,6 +26,7 @@ object MessageHandler {
     val partyMembersPattern = Regex("Party Members: (?<pms>(((\\[\\S+]\\s)?)\\S+ ● )+)") //§eParty Members: §r§7AAA§r§a ● §r
     val burrowPattern = Regex("§r§eYou dug out a Griffin Burrow! §r§7\\((?<index>\\d)/4\\)") //§r§eYou dug out a Griffin Burrow! §r§7(1/4)§r§7
     val inquisPattern = Regex("\\[Diana] Inquis! \\[(?<one>(-?\\d{1,3})),(?<two>(-?\\d{1,3})),(?<three>(-?\\d{1,3}))] at ⏣")
+    val coordsPattern = Regex("x: (?<one>(-?\\d{1,3})), y: (?<two>(-?\\d{1,3})), z: (?<three>(-?\\d{1,3}))")
 
     var receivedInquisFrom: ArrayList<String> = arrayListOf()
     var inParty = false
@@ -99,7 +100,7 @@ object MessageHandler {
                 }
             }
             inParty = true
-        } ?: inquisPattern.find(unformatted).takeIf { sender != null && Config.receiveInq != 0 }?.let {
+        } ?: inquisPattern.find(unformatted) ?: coordsPattern.takeIf { Config.receiveInqFromPatcher }?.find(unformatted)?.takeIf { sender != null && Config.receiveInq != 0 }?.let {
             if ((Config.receiveInq == 2 || (message.contains("§r§9Party §8>") || partyMembers.contains(sender))) && sender != mc.thePlayer.name && !Config.getIgnoreList().contains(sender?.lowercase())) {
                 val pos = BlockPos(
                     it.groups["one"]?.value?.toIntOrNull() ?: return,
