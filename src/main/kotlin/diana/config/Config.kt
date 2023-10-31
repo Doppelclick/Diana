@@ -1,15 +1,16 @@
 package diana.config
 
-import diana.Diana
+import diana.Diana.Companion.modName
 import diana.core.Burrows
 import diana.core.Waypoint
+import diana.soopy.WebsiteConnection
 import diana.utils.Utils
 import gg.essential.vigilance.Vigilant
 import gg.essential.vigilance.data.*
 import java.awt.Color
 import java.io.File
 
-object Config : Vigilant(File("./config/${Diana.modName}.toml"), "Diana", sortingBehavior = Sorting) {
+object Config : Vigilant(File("./config/$modName.toml"), "Diana", sortingBehavior = Sorting) {
     @Property(
         category = "General",
         name = "Toggle",
@@ -87,31 +88,53 @@ object Config : Vigilant(File("./config/${Diana.modName}.toml"), "Diana", sortin
 
     @Property(
         category = "Inquisitor",
+        name = "Inquisitor Waypoint Mode",
+        description = "How to handle Inquisitor waypoints (send & receive).",
+        type = PropertyType.SELECTOR,
+        options = ["Chat", "Soopy", "Both"]
+    )
+    var inqWaypointMode = 0
+
+    @Property(
+        category = "Inquisitor",
+        subcategory = "Send",
         name = "Send Inquisitor",
         description = "Where to send coordinates if an Inquisitor is found.",
         type = PropertyType.SELECTOR,
-        options = ["Off", "Party", "All Chat"]
+        options = ["Off", "Party", "Everyone"]
     )
     var sendInq = 1
 
     @Property(
         category = "Inquisitor",
+        subcategory = "Receive",
         name = "Receive Inquisitor",
         description = "From who to receive inquisitor waypoints.",
         type = PropertyType.SELECTOR,
-        options = ["Off", "Party", "All Chat"]
+        options = ["Off", "Party", "Everyone"]
 
     )
     var receiveInq = 2
 
     @Property(
         category = "Inquisitor",
+        subcategory = "Receive",
         name = "Receive Inquisitor from patcher",
         description = "When someone uses /patcher sendcoords  it will act the same as a Diana inquis waypoint.",
         type = PropertyType.SWITCH
 
     )
     var receiveInqFromPatcher = false
+
+    @Property(
+        category = "Inquisitor",
+        name = "Inquis Waypoint Timeout",
+        type = PropertyType.SLIDER,
+        min = 0,
+        max = 120000,
+        hidden = true
+    )
+    var inqWaypointTimeout = 60000
 
     @Property(
         category = "Inquisitor",
@@ -275,8 +298,35 @@ object Config : Vigilant(File("./config/${Diana.modName}.toml"), "Diana", sortin
     init {
         initialize()
         addDependency("guessColor", "guessSeparateColor")
+
+        registerListener("toggle") { toggled: Boolean ->
+            if (inqWaypointMode != 0 && (sendInq != 0 || receiveInq != 0)) {
+                if (toggled) WebsiteConnection.connect(preConfigToggle = true)
+                else WebsiteConnection.disconnect()
+            }
+        }
+        registerListener("inqWaypointMode") { mode: Int ->
+            if (toggle && (sendInq != 0 || receiveInq != 0)) {
+                if (mode == 0) WebsiteConnection.disconnect()
+                else WebsiteConnection.connect(true)
+            }
+        }
+        registerListener("sendInq") { mode: Int ->
+            if (toggle && inqWaypointMode != 0) {
+                if (mode == 0) {
+                    if (receiveInq == 0) WebsiteConnection.disconnect()
+                } else WebsiteConnection.connect(true)
+            }
+        }
+        registerListener("receiveInq") { mode: Int ->
+            if (toggle && inqWaypointMode != 0) {
+                if (mode == 0) {
+                    if (sendInq == 0) WebsiteConnection.disconnect()
+                } else WebsiteConnection.connect(true)
+            }
+        }
     }
-    
+
     private object Sorting: SortingBehavior() {
         override fun getCategoryComparator(): Comparator<in Category> = compareBy { listOf("General", "Inquisitor", "Customisation", "Beacon", "Warps", "Debug").indexOf(it.name) }
     }

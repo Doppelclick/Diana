@@ -1,8 +1,8 @@
 package diana.handlers
 
-import diana.Diana
+import diana.Diana.Companion.config
 import diana.Diana.Companion.mc
-import diana.config.Config
+import diana.Diana.Companion.waypointStyles
 import diana.core.Burrows
 import diana.core.Burrows.burrow
 import diana.core.Burrows.selected
@@ -23,7 +23,7 @@ object Render {
     private var scaleTime: Long = 0L
     private var lastInterpolation: Long = 0L
     private var interpolation: Long = 0L
-    private var lastTick = 0
+    private var lastCheck = 0L
 
     /**
      * Taken from DungeonRooms under Creative Commons Attribution-NonCommercial 3.0
@@ -32,10 +32,10 @@ object Render {
      */
     @SubscribeEvent
     fun worldRender(event: RenderWorldLastEvent) {
-        if (!Config.toggle || (!Config.beaconBlock && !Config.beaconBeam && !Config.beaconText) || !LocationHandler.doingDiana) return
+        if (!config.toggle || (!config.beaconBlock && !config.beaconBeam && !config.beaconText) || !LocationHandler.doingDiana) return
         var guessPos: Vec3? = null
-        if (Config.guess && burrow != null) {
-            if (Config.interpolation) {
+        if (config.guess && burrow != null) {
+            if (config.interpolation) {
                 if (lastBurrow == null) lastBurrow = burrow
                 if (lastLastBurrow == null) lastLastBurrow = lastBurrow
                 guessPos = if (lastBurrow!!.distanceTo(lastLastBurrow!!) < 0.15) {
@@ -57,10 +57,10 @@ object Render {
             } else guessPos = burrow!!
         }
 
-        if (lastTick != LocationHandler.ticks) {
-            lastTick = LocationHandler.ticks
+        if (lastCheck + 75 < System.currentTimeMillis()) { //TODO: possibly adjust timing
+            lastCheck = System.currentTimeMillis()
             selected = waypoints.map { Vec3(it.pos) }.plus(
-                if (Config.guess && guessPos != null) listOf(guessPos)
+                if (config.guess && guessPos != null) listOf(guessPos)
                 else listOf()
             ).minByOrNull { Utils.visualDistanceTo(it, mc.thePlayer) }?.takeIf { Utils.visualDistanceTo(it, mc.thePlayer) < 129600 && it.distanceTo(mc.thePlayer.positionVector) > 15 }?.let {
                 if (it == guessPos) burrow else it
@@ -78,26 +78,26 @@ object Render {
             scaleTime = 0
         }
 
-        if (Config.guess && guessPos != null) {
+        if (config.guess && guessPos != null) {
             RenderUtils.renderBeacon(
                 event.partialTicks,
-                "§l§bGuess " + Diana.waypointStyles[Burrows.lastDug]?.first + " (" + Burrows.lastDug + ")",
+                "§l§bGuess " + waypointStyles[Burrows.lastDug]?.first + " (" + Burrows.lastDug + ")",
                 if (burrow == selected) scale else 1f,
                 guessPos,
-                if (Config.guessSeparateColor) Config.guessColor else (Diana.waypointStyles[Burrows.lastDug]?.second ?: Color.BLACK),
+                if (config.guessSeparateColor) config.guessColor else (waypointStyles[Burrows.lastDug]?.second ?: Color.BLACK),
                 1.0
             )
         }
         waypoints.toSet().forEach {
             var display = ""
             var color = Color.BLACK
-            if (it is Waypoint.ParticleBurrowWaypoint && Config.proximity) {
-                display = Diana.waypointStyles[it.type]?.first + " (" + (if (it.type == 3) "2/" else "") + it.type + ")"
-                color = Diana.waypointStyles[it.type]?.second ?: Color.BLACK
+            if (it is Waypoint.ParticleBurrowWaypoint && config.proximity) {
+                display = waypointStyles[it.type]?.first + " (" + (if (it.type == 3) "2/" else "") + it.type + ")"
+                color = waypointStyles[it.type]?.second ?: Color.BLACK
             } else if (it is Waypoint.InquisWaypoint) {
                 if (MessageHandler.partyMembers.contains(it.player)) display = "§9"
                 display = display + it.player + "§r's §6Inquisitor"
-                color = Config.inquisitorColor
+                color = config.inquisitorColor
             }
             RenderUtils.renderBeacon(event.partialTicks, display, if (it.pos == selected?.let { BlockPos(it) }) scale else 1f, Vec3(it.pos), color)
         }

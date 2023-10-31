@@ -1,7 +1,7 @@
 package diana.utils
 
+import diana.Diana.Companion.config
 import diana.Diana.Companion.mc
-import diana.config.Config
 import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.client.renderer.Tessellator
 import net.minecraft.client.renderer.culling.Frustum
@@ -32,9 +32,9 @@ object RenderUtils {
         GlStateManager.disableDepth()
         GlStateManager.disableCull()
         if (distSq > 35) {
-            if (Config.beaconBeam) renderBeaconBeam(x, y + scale2, z, color.rgb, 0.25f, partialTicks)
+            if (config.beaconBeam) renderBeaconBeam(x, y + scale2, z, color.rgb, 0.25f, partialTicks)
         } else scale2 = 1f
-        if (Config.beaconBlock && frustum.isBoxInFrustum(
+        if (config.beaconBlock && frustum.isBoxInFrustum(
                 pos.xCoord,
                 pos.yCoord,
                 pos.zCoord,
@@ -53,7 +53,7 @@ object RenderUtils {
             ), color, 0.4f
         )
         GlStateManager.disableTexture2D()
-        if (Config.beaconText) renderWaypointText(
+        if (config.beaconText) renderWaypointText(
             info,
             pos.addVector(0.0, scale2.toDouble() + textHeight, 0.0),
             partialTicks,

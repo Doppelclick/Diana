@@ -4,6 +4,7 @@
     "package": "diana.mixins",
     "refmap": "mixins.${modID}.refmap.json",
     "client": [
+        "MixinMinecraft",
         "MixinNetworkManager"
     ]
 }

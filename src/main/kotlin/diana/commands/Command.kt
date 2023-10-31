@@ -1,10 +1,12 @@
 package diana.commands
 
-import diana.Diana
-import diana.config.Config
+import diana.Diana.Companion.config
+import diana.Diana.Companion.mc
 import diana.core.Burrows
 import diana.handlers.MessageHandler
+import diana.soopy.WebsiteConnection
 import diana.utils.Utils
+import diana.utils.Utils.modMessage
 import net.minecraft.command.CommandBase
 import net.minecraft.command.ICommandSender
 import net.minecraft.util.BlockPos
@@ -36,7 +38,7 @@ class Command : CommandBase() {
             if (args[1].equals("add", true)) {
                 return getListOfStringsMatchingLastWord(args, MessageHandler.receivedInquisFrom)
             } else if (args[1].equals("remove", true)) {
-                return getListOfStringsMatchingLastWord(args, Config.getIgnoreList())
+                return getListOfStringsMatchingLastWord(args, config.getIgnoreList())
             }
         }
         return super.addTabCompletionOptions(sender, args, pos)
@@ -45,33 +47,33 @@ class Command : CommandBase() {
     override fun processCommand(sender: ICommandSender, args: Array<String>) {
         when (args.getOrNull(0)) {
             null -> {
-                Thread { Diana.mc.addScheduledTask { Diana.mc.displayGuiScreen(Config.gui()) } }.start()
+                Thread { mc.addScheduledTask { mc.displayGuiScreen(config.gui()) } }.start()
             }
             "ignore" -> {
                 if (args.size == 1) {
-                    Utils.modMessage("Ignore List: " + Config.getIgnoreList())
+                    modMessage("Ignore List: " + config.getIgnoreList())
                 } else if (args.size == 2) {
                     if (args[1].equals("list", true) || args[1].equals("view", true)) {
-                        Utils.modMessage("Ignore List: " + Config.getIgnoreList())
+                        modMessage("Ignore List: " + config.getIgnoreList())
                     } else {
-                        Utils.modMessage("§cInvalid args!§r /diana ignore [list, add [player], remove [player]]")
+                        modMessage("§cInvalid args!§r /diana ignore [list, add [player], remove [player]]")
                     }
                 } else {
                     when (args[1].lowercase()) {
                         "list", "view" -> {
-                            Utils.modMessage("Ignore List: ${Config.getIgnoreList()}")
+                            modMessage("Ignore List: ${config.getIgnoreList()}")
                         }
 
                         "add" -> {
-                            Config.addToIgnoreList(args.drop(2).map { it.lowercase() })
+                            config.addToIgnoreList(args.drop(2).map { it.lowercase() })
                         }
 
                         "remove" -> {
-                            Config.removeFromIgnoreList(args.drop(2).map { it.lowercase() })
+                            config.removeFromIgnoreList(args.drop(2).map { it.lowercase() })
                         }
 
                         else -> {
-                            Utils.modMessage("§cInvalid args!§r /diana ignore [list, add [player], remove [player]]")
+                            modMessage("§cInvalid args!§r /diana ignore [list, add [player], remove [player]]")
                         }
                     }
                 }
@@ -79,23 +81,23 @@ class Command : CommandBase() {
 
             "clear" -> {
                 Burrows.waypoints.clear()
-                Utils.modMessage("Cleared Waypoints.")
+                modMessage("Cleared Waypoints.")
             }
 
             "clearall" -> {
                 Burrows.waypoints.clear()
                 Burrows.foundBurrows.clear()
-                Utils.modMessage("Cleared Waypoints and found burrows.")
+                modMessage("Cleared Waypoints and found burrows.")
             }
 
             "reload" -> {
-                Config.loadData()
-                Utils.modMessage("Reloaded config.")
+                config.loadData()
+                modMessage("Reloaded config.")
             }
 
             "enablewarp" -> {
-                Config.setWarp(args.getOrNull(1) ?: return, true)
-                Utils.modMessage("Enabled ${args[1]} warp.")
+                config.setWarp(args.getOrNull(1) ?: return, true)
+                modMessage("Enabled ${args[1]} warp.")
             }
 
             "dev" -> {
@@ -109,7 +111,7 @@ class Command : CommandBase() {
                                 x.toDouble(),
                                 y.toDouble(),
                                 z.toDouble()
-                            ).apply { Utils.modMessage("Set burrow to: $this") }
+                            ).apply { modMessage("Set burrow to: $this") }
                         }
                     }
 
@@ -124,21 +126,34 @@ class Command : CommandBase() {
                     }
 
                     "listparty" -> {
-                        Utils.modMessage("Party: ${MessageHandler.inParty}: ${MessageHandler.partyMembers}")
+                        modMessage("Party: ${MessageHandler.inParty}: ${MessageHandler.partyMembers}")
                     }
 
                     "printdata" -> {
-                        Utils.modMessage("${Burrows.guessPos} \n${Burrows.interceptPos}")
+                        modMessage("${Burrows.guessPos} \n${Burrows.interceptPos}")
+                    }
+
+                    "restartserver" -> {
+                        if (WebsiteConnection.connected) {
+                            modMessage("Reconnecting...")
+                            WebsiteConnection.disconnect()
+                            Utils.startTimerTask(5000) {
+                                WebsiteConnection.connect()
+                                modMessage("-> Connecting")
+                            }
+                        } else {
+                            modMessage("Server not running")
+                        }
                     }
 
                     else -> {
-                        Utils.modMessage("§cInvalid args!")
+                        modMessage("§cInvalid args!")
                     }
                 }
             }
 
             else -> {
-                Utils.modMessage(help)
+                modMessage(help)
             }
         }
     }

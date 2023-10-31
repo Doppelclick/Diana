@@ -3,7 +3,6 @@ package diana.utils
 import diana.Diana.Companion.chatTitle
 import diana.Diana.Companion.mc
 import net.minecraft.client.entity.EntityPlayerSP
-import net.minecraft.scoreboard.ScorePlayerTeam
 import net.minecraft.util.ChatComponentText
 import net.minecraft.util.Vec3
 import java.util.*
@@ -36,32 +35,9 @@ object Utils {
 
     fun ping() {
         playSound("note.pling", 1f, 0.6f)
-        Timer().schedule(object : TimerTask() {
-            override fun run() {
-                playSound("note.pling", 1f, 0.7f)
-            }
-        }, 180)
-        Timer().schedule(object : TimerTask() {
-            override fun run() {
-                playSound("note.pling", 1f, 0.8f)
-            }
-        }, 360)
+        startTimerTask(180) { playSound("note.pling", 1f, 0.7f) }
+        startTimerTask(360) { playSound("note.pling", 1f, 0.8f) }
     }
-
-    val sidebarLines: List<String>
-        get() {
-            val scoreboard = mc.theWorld?.scoreboard ?: return emptyList()
-            val objective = scoreboard.getObjectiveInDisplaySlot(1) ?: return emptyList()
-            var scores = scoreboard.getSortedScores(objective)
-            scores = scores.filter {
-                it?.playerName?.startsWith("#") == false
-            }.let {
-                if (it.size > 15) it.drop(15) else it
-            }
-            return scores.map {
-                ScorePlayerTeam.formatPlayerName(scoreboard.getPlayersTeam(it.playerName), it.playerName)
-            }
-        }
 
     fun visualDistanceTo(burrow: Vec3, player: EntityPlayerSP): Double {
         val playerp = player.positionVector.addVector(0.0, player.getEyeHeight().toDouble(), 0.0)
@@ -94,5 +70,13 @@ object Utils {
             playerPos.yCoord + 1 - point.yCoord,
             hypot(playerPos.xCoord - point.xCoord, playerPos.zCoord - point.zCoord)
         ) * 180 / Math.PI % 360
+    }
+
+    fun startTimerTask(delay: Long, action: () -> Unit) {
+        Timer().schedule(object : TimerTask() {
+            override fun run() {
+                action()
+            }
+        }, delay)
     }
 }

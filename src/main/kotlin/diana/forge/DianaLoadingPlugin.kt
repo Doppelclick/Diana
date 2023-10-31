@@ -1,6 +1,6 @@
 package diana.forge
 
-import diana.Diana
+import diana.Diana.Companion.modID
 import net.minecraftforge.common.ForgeVersion
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin.MCVersion
@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.Mixins
 class DianaLoadingPlugin: IFMLLoadingPlugin {
     init {
         MixinBootstrap.init()
-        Mixins.addConfiguration("mixins.${Diana.modID}.json")
+        Mixins.addConfiguration("mixins.$modID.json")
         MixinEnvironment.getCurrentEnvironment().obfuscationContext = "searge"
     }
 

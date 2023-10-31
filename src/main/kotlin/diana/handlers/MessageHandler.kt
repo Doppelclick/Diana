@@ -1,17 +1,13 @@
 package diana.handlers
 
-import diana.Diana
+import diana.Diana.Companion.config
 import diana.Diana.Companion.mc
-import diana.config.Config
+import diana.Diana.Companion.warps
 import diana.core.Burrows
 import diana.core.Warp
-import diana.core.Waypoint
 import diana.utils.Utils
-import net.minecraft.event.ClickEvent
-import net.minecraft.event.HoverEvent
 import net.minecraft.network.play.server.S02PacketChat
 import net.minecraft.util.BlockPos
-import net.minecraft.util.ChatComponentText
 import net.minecraft.util.StringUtils
 import net.minecraft.util.Vec3
 
@@ -94,44 +90,20 @@ object MessageHandler {
         } ?: partyMembersPattern.find(unformatted).takeIf { message.startsWith("§eParty Members: ") }?.let {
             it.groups["pms"]?.value?.split(" ● ")?.forEach {
                 it.replace("(\\[\\S+]\\s)".toRegex(), "").run {
-                    if (this != mc.thePlayer.name && !partyMembers.contains(this)) {
+                    if (this.isNotEmpty() && this != mc.thePlayer.name && !partyMembers.contains(this)) {
                         partyMembers.add(this)
                     }
                 }
             }
             inParty = true
-        } ?: inquisPattern.find(unformatted) ?: coordsPattern.takeIf { Config.receiveInqFromPatcher }?.find(unformatted)?.takeIf { sender != null && Config.receiveInq != 0 }?.let {
-            if ((Config.receiveInq == 2 || (message.contains("§r§9Party §8>") || partyMembers.contains(sender))) && sender != mc.thePlayer.name && !Config.getIgnoreList().contains(sender?.lowercase())) {
-                val pos = BlockPos(
-                    it.groups["one"]?.value?.toIntOrNull() ?: return,
-                    it.groups["two"]?.value?.toIntOrNull() ?: return,
-                    it.groups["three"]?.value?.toIntOrNull() ?: return
-                )
-                Burrows.waypoints.add(Waypoint.InquisWaypoint(pos, sender!!, System.currentTimeMillis()))
-                Utils.showClientTitle(
-                    "",
-                    "§c" + sender + " 's Inquis near " + Warp.closest(Vec3(pos), true)?.name
-                )
-                Utils.ping()
-                val ignore = ChatComponentText("§c [Ignore this player] ")
-                ignore.setChatStyle(
-                    ignore.getChatStyle().setChatClickEvent(
-                        ClickEvent(
-                            ClickEvent.Action.RUN_COMMAND,
-                            "/diana ignore add $sender"
-                        )
-                    ).setChatHoverEvent(
-                        HoverEvent(
-                            HoverEvent.Action.SHOW_TEXT,
-                            ChatComponentText("ignore add $sender")
-                        )
+        } ?: inquisPattern.find(unformatted) ?: coordsPattern.takeIf { config.receiveInqFromPatcher }?.find(unformatted)?.takeIf {
+                sender != null && sender != mc.thePlayer.name && config.receiveInq != 0 && config.inqWaypointMode != 1 }?.let {
+                    val pos = BlockPos(
+                        it.groups["one"]?.value?.toIntOrNull() ?: return,
+                        it.groups["two"]?.value?.toIntOrNull() ?: return,
+                        it.groups["three"]?.value?.toIntOrNull() ?: return
                     )
-                )
-                val component = ChatComponentText(Diana.chatTitle + "§cInquis Waypoint received§r from " + sender + " ")
-                component.appendSibling(ignore)
-                Utils.modMessage(component)
-                receivedInquisFrom.add(sender)
-            }
+                    EntityHandler.handleInquisWaypointReceived(pos, sender!!, message.contains("§r§9Party §8>"))
         } ?: let { burrowPattern.find(message)?.groups?.get("index")?.value?.toIntOrNull() ?: if (message.contains("§r§eYou finished the Griffin burrow chain! §r§7(4/4)§r")) 4 else null }?.let { index ->
                 Render.resetRender()
                 Burrows.arrowStart = null
@@ -154,9 +126,9 @@ object MessageHandler {
         } ?: run {
             if (message.contains("§r§cYou haven't unlocked this fast travel destination!§r") && (Warp.lastwarp != "undefined")) {
                 if (Warp.lastwarp != "hub") {
-                    Diana.warps.find { it.name == Warp.lastwarp }?.apply {
+                    warps.find { it.name == Warp.lastwarp }?.apply {
                         if (this.enabled()) {
-                            Config.setWarp(Warp.lastwarp, false)
+                            config.setWarp(Warp.lastwarp, false)
                         }
                     }
                 }

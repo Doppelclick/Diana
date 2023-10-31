@@ -10,7 +10,7 @@ abstract class Waypoint (
     class InquisWaypoint(
         pos: BlockPos,
         var player: String,
-        var time: Long
+        var time: Long //possibly remove
     ) : Waypoint(pos)
 
     class ParticleBurrowWaypoint(

@@ -4,8 +4,8 @@ import com.google.gson.Gson
 import com.google.gson.JsonIOException
 import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
+import diana.Diana.Companion.config
 import diana.Diana.Companion.mc
-import diana.config.Config
 import diana.utils.Utils
 import net.minecraft.util.BlockPos
 import net.minecraft.util.ResourceLocation
@@ -42,7 +42,7 @@ object Burrows {
 
     var selected: Vec3? = null
     var burrow: Vec3?
-        get() = interceptPos?.let { if (Config.interceptAsFullBlock) Vec3(BlockPos(it)) else it } ?: guessPos
+        get() = interceptPos?.let { if (config.interceptAsFullBlock) Vec3(BlockPos(it)) else it } ?: guessPos
         set(pos) {
             guessPos = pos
             interceptPos = pos
@@ -71,14 +71,14 @@ object Burrows {
         val y = getHeight(round(x).toInt(), round(z).toInt()) ?: burrow?.yCoord ?: (lastSound.yCoord + changes.yCoord * distance)
 
         guessPos = Vec3(x, y, z)
-        if (Config.messages && !echo) Utils.modMessage( //TODO: Fix !echo
+        if (config.messages && !echo) Utils.modMessage( //TODO: Fix !echo
             "[" + Math.round(x) + "," + Math.round(
                 guessPos!!.yCoord
             ) + "," + Math.round(z) + "] " + Math.round(distance).toInt()
         )
         interceptPos?.distanceTo(guessPos)?.run {
             val relGuess = sqrt(guessPos!!.distanceTo(mc.thePlayer.positionVector))
-            if (this > (relGuess + Config.guessTolerance)) {
+            if (this > (relGuess + config.guessTolerance)) {
                 interceptPos = null
             }
         }
@@ -87,7 +87,7 @@ object Burrows {
     }
 
     private fun intercept() {
-        if (!Config.calculateIntercept) return
+        if (!config.calculateIntercept) return
         val playerPos = mc.thePlayer?.positionVector ?: return
 
         val p1 = particles.first()
@@ -109,9 +109,9 @@ object Burrows {
         val z = (v1.zCoord / v1.xCoord * x - a).apply { if (this.isNaN()) return }
 
         val intercept = Vec3(x, getHeight(x.roundToInt(), z.roundToInt()) ?: burrow?.yCoord ?: 60.0, z)
-        if (guessPos != null &&! Config.ignoreAccuracyChecks) {
+        if (guessPos != null &&! config.ignoreAccuracyChecks) {
             val relGuess = sqrt(guessPos!!.distanceTo(playerPos))
-            if (intercept.distanceTo(guessPos) > (relGuess + Config.guessTolerance)) {
+            if (intercept.distanceTo(guessPos) > (relGuess + config.guessTolerance)) {
                 return
             }
         }
