@@ -1,14 +1,20 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import net.minecraftforge.gradle.user.ReobfMappingType
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import dev.architectury.pack200.java.Pack200Adapter
+import net.fabricmc.loom.task.RemapJarTask
 
 plugins {
-    infix fun PluginDependencySpec.from(artifact: String?): PluginDependencySpec = version("useModule@$artifact")
-
+    kotlin("jvm") version "1.9.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("gg.essential.loom") version "0.10.0.+"
+    id("dev.architectury.architectury-pack200") version "0.1.3"
+    idea
     java
-    kotlin("jvm") version "1.8.0"
-    id("com.github.johnrengelman.shadow") version "6.1.0"
-    id("net.minecraftforge.gradle.forge") from "com.github.debuggingss:ForgeGradle:FG_2.1-SNAPSHOT"
-    id("org.spongepowered.mixin") from "com.github.xcfrg:MixinGradle:0.6-SNAPSHOT"
+}
+
+repositories {
+    maven("https://repo.sk1er.club/repository/maven-public/")
+    maven("https://repo.spongepowered.org/repository/maven-public/")
+    //maven("https://jitpack.io/")
 }
 
 val modName: String by project
@@ -18,90 +24,92 @@ val modVersion: String by project
 version = modVersion
 group = modID
 
-sourceSets {
-    main {
-        extra["refMap"] = "mixins.${modID}.refmap.json"
-        output.setResourcesDir(java.outputDir)
-    }
-}
-
-minecraft {
-    version = "1.8.9-11.15.1.2318-1.8.9"
-    mappings = "stable_22"
-    runDir = runDir
-
-    makeObfSourceJar = false
-    clientJvmArgs.add("-Delementa.dev=true")
-    clientRunArgs.add("--tweakClass gg.essential.loader.stage0.EssentialSetupTweaker")
-    clientRunArgs.add("--mixin mixins.${modID}.json")
-}
-
-val embed: Configuration by configurations.creating {
+val shadowMe: Configuration by configurations.creating {
     configurations.implementation.get().extendsFrom(this)
 }
 
-repositories {
-    mavenCentral()
-    maven("https://jitpack.io/")
-    maven("https://repo.sk1er.club/repository/maven-public/")
-    maven("https://repo.spongepowered.org/repository/maven-public/")
-}
-
 dependencies {
-    embed("gg.essential:loader-launchwrapper:1.1.3")
-    compileOnly("gg.essential:essential-1.8.9-forge:11640+g7f637cfee")
+    minecraft("com.mojang:minecraft:1.8.9")
+    mappings("de.oceanlabs.mcp:mcp_stable:22-1.8.9")
+    forge("net.minecraftforge:forge:1.8.9-11.15.1.2318-1.8.9")
+
+    shadowMe("gg.essential:loader-launchwrapper:1.1.3")
+    implementation("gg.essential:essential-1.8.9-forge:12132+g6e2bf4dc5")
 
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
     compileOnly("org.spongepowered:mixin:0.8.5")
 }
 
-reobf {
-    create("shadowJar")
-    all {
-        mappingType = ReobfMappingType.SEARGE
+sourceSets.main {
+    output.setResourcesDir("${buildDir}/classes/kotlin/main")
+}
+
+loom {
+    silentMojangMappingsLicense()
+    launchConfigs.getByName("client") {
+        property("mixin.debug", "true")
+        property("asmhelper.verbose", "true")
+        arg("--tweakClass", "gg.essential.loader.stage0.EssentialSetupTweaker")
+        arg("--mixin", "mixins.${modID}.json")
     }
+    runConfigs {
+        getByName("client") {
+            isIdeConfigGenerated = true
+        }
+        remove(getByName("server"))
+    }
+    forge {
+        pack200Provider.set(Pack200Adapter())
+        mixinConfig("mixins.${modID}.json")
+    }
+    mixin.defaultRefmapName.set("mixins.${modID}.refmap.json")
 }
 
 tasks {
-    reobfJar {
-        dependsOn(shadowJar)
+    processResources {
+        inputs.property("modName", modName)
+        inputs.property("modID", modID)
+        inputs.property("version", project.version)
+        inputs.property("mcversion", "1.8.9")
+
+        filesMatching(listOf("mcmod.info", "mixins.${modID}.json")) {
+            expand(mapOf(
+                "modName" to modName,
+                "modID" to modID,
+                "version" to project.version,
+                "mcversion" to "1.8.9"
+            ))
+        }
+        dependsOn(compileJava)
     }
-
-    shadowJar {
-        archiveFileName.set(jar.get().archiveFileName)
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
+    named<Jar>("jar") {
         manifest.attributes(
             "FMLCorePluginContainsFMLMod" to true,
             "FMLCorePlugin" to "${modID}.forge.DianaLoadingPlugin",
             "ForceLoadAsMod" to true,
+            "MixinConfigs" to "mixins.${modID}.json",
             "ModSide" to "CLIENT",
             "TweakClass" to "gg.essential.loader.stage0.EssentialSetupTweaker",
-            "MixinConfigs" to "mixins.${modID}.json"
+            "TweakOrder" to "0"
         )
-
-        configurations = listOf(embed)
+        dependsOn(shadowJar)
+        enabled = false
     }
-
-    processResources {
-        from(sourceSets.main.get().resources.srcDirs) {
-            filesMatching(listOf("mcmod.info", "mixins.${modID}.json")) {
-                expand(mapOf(
-                    "modName" to modName,
-                    "modID" to modID,
-                    "version" to project.version,
-                    "mcversion" to "1.8.9"
-                ))
-            }
-        }
+    named<RemapJarTask>("remapJar") {
+        archiveBaseName.set(modName)
+        input.set(shadowJar.get().archiveFile)
     }
-
+    named<ShadowJar>("shadowJar") {
+        archiveBaseName.set(modName)
+        archiveClassifier.set("dev")
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        configurations = listOf(shadowMe)
+        mergeServiceFiles()
+    }
     withType<JavaCompile> {
-        sourceCompatibility = "1.8"
-        targetCompatibility = "1.8"
         options.encoding = "UTF-8"
     }
-    withType<KotlinCompile> {
-        kotlinOptions.jvmTarget = "1.8"
-    }
 }
+
+java.toolchain.languageVersion.set(JavaLanguageVersion.of(8))
+kotlin.jvmToolchain(8)

@@ -1,18 +1,19 @@
 pluginManagement {
     repositories {
-        mavenCentral()
         gradlePluginPortal()
-        maven("https://jitpack.io")
-        maven("https://maven.minecraftforge.net/")
-        maven("https://repo.spongepowered.org/maven")
+        maven("https://maven.fabricmc.net")
+        maven("https://maven.architectury.dev/")
+        maven("https://maven.minecraftforge.net")
+        maven("https://repo.essential.gg/repository/maven-public")
     }
     resolutionStrategy {
         eachPlugin {
-            requested.version?.let {
-                if (it.startsWith("useModule@")) {
-                    useModule(it.removePrefix("useModule@"))
-                }
+            when (requested.id.id) {
+                "gg.essential.loom" -> useModule("gg.essential:architectury-loom:${requested.version}")
             }
         }
     }
 }
+
+val modName: String by settings
+rootProject.name = modName
