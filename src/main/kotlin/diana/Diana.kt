@@ -29,7 +29,7 @@ class Diana {
     companion object {
         const val modName = "Diana"
         const val modID = "diana"
-        const val version = "0.4.3"
+        const val version = "0.5"
         const val chatTitle = "§3[Diana]§r "
         val mc = Minecraft.getMinecraft()
         val config = diana.config.Config
@@ -48,10 +48,6 @@ class Diana {
             3 to ("§fMob/Treasure" to config.unknownColor),
             4 to ("§eTreasure" to config.treasureColor)
         )
-
-        fun onGameUnload() {
-            WebsiteConnection.onGameUnload()
-        }
     }
 
     @Mod.EventHandler
@@ -72,6 +68,5 @@ class Diana {
     fun onInit(event: FMLInitializationEvent) {
         Keybindings.keybindings.forEach { ClientRegistry.registerKeyBinding(it) }
         WebsiteConnection.onInit()
-        //Runtime.getRuntime().addShutdownHook(Thread { onGameUnload() })
     }
 }

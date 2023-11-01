@@ -12,7 +12,7 @@ import diana.utils.getJsonObject
 import diana.utils.getJsonPrimitive
 import net.minecraft.util.BlockPos
 
-object SoopyV2Server : WebsiteCommunicator(WebsiteConnection.socketData.getJsonObject("serverNameToId")?.getJsonPrimitive("soopyv2")?.asInt ?: 3) {
+object SoopyV2Server : WebsiteCommunicator(WebsiteConnection.socketData.getJsonObject("serverNameToId")?.getJsonPrimitive("soopyv2")?.asString ?: "3") {
     override val modVersion = "2.1.202"
 
     override fun onConnectCallback() {
@@ -23,7 +23,6 @@ object SoopyV2Server : WebsiteCommunicator(WebsiteConnection.socketData.getJsonO
     }
 
     override fun onDataCallback(data: JsonObject) {
-        println("Data received: $data")
         when (data.getJsonPrimitive("type")?.asString) {
             "inquisData" -> {
                 if (config.receiveInq != 0 && config.inqWaypointMode != 0) {

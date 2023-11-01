@@ -65,7 +65,8 @@ object EntityHandler {
     }
 
     fun handleInquisWaypointReceived(pos: BlockPos, player: String, fromParty: Boolean = false) {
-        if ((config.receiveInq == 2 || fromParty || MessageHandler.partyMembers.contains(player)) && !config.getIgnoreList().contains(player.lowercase())) {
+        if (LocationHandler.doingDiana && LocationHandler.inHub && (config.receiveInq == 2 || fromParty || MessageHandler.partyMembers.contains(player))
+            && !config.getIgnoreList().contains(player.lowercase())) {
             val waypoint = Waypoint.InquisWaypoint(pos, player, System.currentTimeMillis())
             Burrows.waypoints.add(waypoint)
             Utils.startTimerTask(config.inqWaypointTimeout.toLong()) { Burrows.waypoints.remove(waypoint) }

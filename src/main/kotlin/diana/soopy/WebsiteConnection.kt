@@ -32,14 +32,11 @@ object WebsiteConnection {
 
     private val sendDataArr = mutableListOf<String>()
 
-    val json = JsonParser()
+    private val json = JsonParser()
     val socketData: JsonObject = try {
-        val request = URL("https://raw.githubusercontent.com/Soopyboo32/soopyApis/master/socketData.js").openConnection()
+        val request = URL("https://soopy.dev/socketserver/data.json").openConnection()
         request.connect()
-        val modifiedContent = InputStreamReader(request.getContent() as InputStream).readText()
-            .replace("export default", "")
-
-        json.parse(modifiedContent).getAsJsonObject()
+        json.parse(InputStreamReader(request.getContent() as InputStream).readText()).getAsJsonObject()
     } catch (e: Exception) {
         println("Error reading Soopy SocketData")
         e.printStackTrace()
@@ -47,14 +44,16 @@ object WebsiteConnection {
     }
 
     fun onInit() {
-        handlers = arrayListOf(SoopyV2Server)
+        handlers = arrayListOf(SoopyApisServer, SoopyV2Server)
         connect()
 
         scope.launch {
             while (gameRunning) {
                 if (connected && socket != null) {
                     if (sendDataArr.isNotEmpty()) {
-                        sendDataArr.forEach { writer?.println(it) }
+                        sendDataArr.forEach {
+                            writer?.println(it)
+                        }
                         sendDataArr.clear()
                     } else {
                         delay(100)
@@ -72,7 +71,7 @@ object WebsiteConnection {
     }
 
     fun connect(preConfig: Boolean = false, preConfigToggle: Boolean = false) {
-        if ((!config.toggle &&! preConfigToggle)|| !gameRunning || connected || !socketData.has("port") || (!preConfig && (config.inqWaypointMode == 0 || (config.receiveInq == 0 && config.sendInq == 0)))) return
+        if ((!config.toggle &&! preConfigToggle) || !gameRunning || connected || !socketData.has("port") || (!preConfig && (config.inqWaypointMode == 0 || (config.receiveInq == 0 && config.sendInq == 0)))) return
 
         connectedFull = false
         println("Connecting to Soopy socket")
@@ -84,10 +83,8 @@ object WebsiteConnection {
             println("Reconnecting in $reconDelay ms")
             Utils.startTimerTask(reconDelay.toLong()) { connect() }
             reconDelay *= 1.5f
-            //reconDelay = round(reconDelay)
             return
         }
-
         output = socket!!.getOutputStream()
         writer = PrintWriter(output!!, true)
         connected = true
@@ -132,6 +129,8 @@ object WebsiteConnection {
         if (!connected || socket != null) {
             println("Disconnecting from soopy socket")
             connected = false
+            writer?.close()
+            output?.close()
             streams.forEach { it.close() }
             streams.clear()
             socket?.close()
@@ -141,15 +140,13 @@ object WebsiteConnection {
 
     fun sendData(data: String) {
         if (!connected || socket == null) return
-        println("Sending: $data")
         sendDataArr.add(data.replace("\n", ""))
     }
 
     private fun onData(data: JsonObject) {
-        println("Data received -> $data")
-        when (data.getJsonPrimitive("type")?.asInt ?: -1) {
-            socketData.getJsonObject("packetTypesReverse")?.getJsonPrimitive("connectionSuccess")?.asInt -> {
-                val serverId = java.util.UUID.randomUUID().toString().replace("-", "")
+        when (data.getJsonPrimitive("type")?.asString ?: "") {
+            socketData.getJsonObject("packetTypesReverse")?.getJsonPrimitive("connectionSuccess")?.asString -> {
+                var serverId = java.util.UUID.randomUUID().toString().replace("-", "")
                 try {
                     mc.sessionService.joinServer(
                         mc.session.profile,
@@ -158,60 +155,74 @@ object WebsiteConnection {
                     )
                 } catch (e: Exception) {
                     e.printStackTrace()
+                    serverId = ""
                 }
-                sendData(
-                    createPacket(
-                        socketData.getJsonObject("packetTypesReverse")!!.getJsonPrimitive("connectionSuccess")!!.asInt,
-                        0,
+                if (serverId.isEmpty()) {
+                    disconnect()
+                    println("Failed to establish a full connection")
+                    return
+                }
+                sendData(createPacket(
+                        socketData.getJsonObject("packetTypesReverse")!!.getJsonPrimitive("connectionSuccess")!!.asString,
+                        "0",
                         JsonObject().apply {
                             addProperty("username", mc.session.profile.name) //mc.thePlayer could still be null
                             addProperty("uuid", mc.session.profile.id.toString())
                             addProperty("serverId", serverId)
                         }
-                    )
-                )
+                ))
                 handlers.forEach { handler -> handler.onConnect() }
                 connectedFull = true
                 println("Full connection successful. Handlers (${handlers.size}): ${handlers.map { "ID: ${it.appId}" }}")
             }
-            socketData.getJsonObject("packetTypesReverse")?.getJsonPrimitive("data")?.asInt -> {
-                println("Data received for ${data.getJsonPrimitive("server")?.asInt}:  $data")
+            socketData.getJsonObject("packetTypesReverse")?.getJsonPrimitive("data")?.asString -> {
                 data.getJsonObject("data")?.let { receivedData ->
-                    handlers.find { it.appId == data.getJsonPrimitive("server")?.asInt }?.onData(receivedData)
+                    handlers.find { it.appId == data.getJsonPrimitive("server")?.asString }?.onData(receivedData)
                 } ?: println(data.getJsonPrimitive("noHandlerMessage")?.asString ?: "noHandlerMessage not parsed")
             }
-            socketData.getJsonObject("packetTypesReverse")?.getJsonPrimitive("serverReboot")?.asInt -> {
+            socketData.getJsonObject("packetTypesReverse")?.getJsonPrimitive("serverReboot")?.asString -> {
                 disconnect()
                 Utils.startTimerTask(5000) { connect() }
                 println("Soopy Server rebooting. Rejoining in 5 seconds")
             }
-            socketData.getJsonObject("packetTypesReverse")?.getJsonPrimitive("ping")?.asInt -> {
+            socketData.getJsonObject("packetTypesReverse")?.getJsonPrimitive("ping")?.asString -> {
                 sendData(
                     createPacket(
-                        socketData.getJsonObject("packetTypesReverse")!!.getJsonPrimitive("ping")!!.asInt,
-                        0,
-                        JsonObject()
+                        socketData.getJsonObject("packetTypesReverse")!!.getJsonPrimitive("ping")!!.asString,
+                        "0"
                     )
                 )
             }
         }
     }
 
-    fun createDataPacket(data: JsonObject, server: Int = socketData.getJsonObject("serverNameToId")?.getJsonPrimitive("soopyapis")?.asInt ?: -1): String {
-        return createPacket(socketData.getJsonObject("packetTypesReverse")!!.getJsonPrimitive("data")!!.asInt, server, data)
+    fun createDataPacket(data: JsonObject, server: String = socketData.getJsonObject("serverNameToId")?.getJsonPrimitive("soopyapis")?.asString ?: ""): String {
+        return createPacket(socketData.getJsonObject("packetTypesReverse")!!.getJsonPrimitive("data")!!.asString, server, data)
     }
 
-    fun createPacket(type: Int, server: Int = socketData.getJsonObject("serverNameToId")?.getJsonPrimitive("soopyapis")?.asInt ?: -1, data: JsonElement): String {
+    fun createPacket(type: String, server: String = socketData.getJsonObject("serverNameToId")?.getJsonPrimitive("soopyapis")?.asString ?: "", data: JsonElement = JsonObject()): String {
         return JsonObject().apply {
             addProperty("type", type)
-            addProperty("server", server)
+            addProperty("server", server) //THESE HAVE TO BE STRINGS!!!
             add("data", data)
         }.toString()
     }
 }
 
+object SoopyApisServer: WebsiteCommunicator(WebsiteConnection.socketData.getJsonObject("serverNameToId")?.getJsonPrimitive("soopyapis")?.asString ?: "0") {
+    override val modVersion = "0.1.17"
+
+    override fun onDataCallback(data: JsonObject) {
+        when (data.getJsonPrimitive("type")?.asString) {
+            "message" -> {
+                Utils.modMessage(data.getJsonPrimitive("message")?.asString ?: return)
+            }
+        }
+    }
+}
+
 interface EventHandler {
-    val appId: Int
+    val appId: String
     fun onConnect()
     fun onData(data: JsonObject)
 }

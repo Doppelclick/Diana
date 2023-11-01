@@ -36,7 +36,7 @@ object LocationHandler {
     fun serverConnect(event: FMLNetworkEvent.ClientConnectedToServerEvent) {
         if (onHypixel) return
         mc.currentServerData?.run {
-            if (this.serverIP.lowercase(Locale.getDefault()).contains("hypixel.")) {
+            if (this.serverIP.lowercase().contains("hypixel.")) {
                 onHypixel = true
                 Updater().check()
             }
@@ -144,7 +144,6 @@ object LocationHandler {
 
         fun NetworkPlayerInfo.safePlayerTeam() = mc.theWorld?.scoreboard?.getPlayersTeam(this.gameProfile?.name)
     }
-
 
     @SubscribeEvent
     fun onWorldUnload(event: WorldEvent.Unload) {

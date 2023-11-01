@@ -38,7 +38,7 @@
 + /msg user:558642345302687764 message:Hi!
 
 ### Credits:
-Took a lot of stuff from DungeonRooms (partly from NEU), the calculation from Soopy (I tested it to be the most accurate), Hub detection from Danker's Skyblock mod, the Packet Handling from Luna, proximity values from Skytils
+DungeonRooms (partly NEU), the calculation from Soopy and letting me use his server, the Packet Handling from Luna, proximity values from Skytils
 
 ### Download:
 <p>

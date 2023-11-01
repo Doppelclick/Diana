@@ -96,7 +96,7 @@ object MessageHandler {
                 }
             }
             inParty = true
-        } ?: inquisPattern.find(unformatted) ?: coordsPattern.takeIf { config.receiveInqFromPatcher }?.find(unformatted)?.takeIf {
+        } ?: (inquisPattern.find(unformatted) ?: coordsPattern.takeIf { config.receiveInqFromPatcher }?.find(unformatted))?.takeIf {
                 sender != null && sender != mc.thePlayer.name && config.receiveInq != 0 && config.inqWaypointMode != 1 }?.let {
                     val pos = BlockPos(
                         it.groups["one"]?.value?.toIntOrNull() ?: return,
