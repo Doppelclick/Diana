@@ -21,10 +21,10 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 object EntityHandler {
     @SubscribeEvent
     fun entity(event: EntityJoinWorldEvent) {
-        if (!config.toggle || config.sendInq == 0 || !LocationHandler.doingDiana) return
+        if (!config.toggle || config.sendInq == 0 || (config.sendInq == 1 &&! MessageHandler.inParty) || !LocationHandler.doingDiana) return
         val entity = event.entity ?: return
         val player = Minecraft.getMinecraft().thePlayer ?: return
-        if (entity.name.contains("Minos Inquisitor") && (config.sendInq == 2 || MessageHandler.inParty)) {
+        if (entity.name.contains("Minos Inquisitor")) {
             if (Utils.maxDistance(player.positionVector, entity.positionVector) < 10 && Burrows.dugBurrows.any { it.distanceSq(entity.position) < 25 }) {
                 val pos = BlockPos(entity.positionVector).down()
                 if (config.inqWaypointMode != 0) {
@@ -65,7 +65,7 @@ object EntityHandler {
     }
 
     fun handleInquisWaypointReceived(pos: BlockPos, player: String, fromParty: Boolean = false) {
-        if (LocationHandler.doingDiana && LocationHandler.inHub && (config.receiveInq == 2 || fromParty || MessageHandler.partyMembers.contains(player))
+        if (player != mc.thePlayer.name && LocationHandler.doingDiana && LocationHandler.inHub && (config.receiveInq == 2 || fromParty || MessageHandler.partyMembers.contains(player))
             && !config.getIgnoreList().contains(player.lowercase())) {
             val waypoint = Waypoint.InquisWaypoint(pos, player, System.currentTimeMillis())
             Burrows.waypoints.add(waypoint)

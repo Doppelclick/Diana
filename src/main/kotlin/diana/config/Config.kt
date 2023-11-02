@@ -20,6 +20,14 @@ object Config : Vigilant(File("./config/$modName.toml"), "Diana", sortingBehavio
 
     @Property(
         category = "General",
+        name = "Check Beta Versions",
+        description = "Also check for beta versions when checking for updates.",
+        type = PropertyType.SWITCH
+    )
+    var updateCheckBeta = false
+
+    @Property(
+        category = "General",
         name = "Guess",
         description = "Whether the mod should guess the location of the burrow.",
         type = PropertyType.SWITCH
@@ -286,13 +294,15 @@ object Config : Vigilant(File("./config/$modName.toml"), "Diana", sortingBehavio
     )
     var forceHub = false
 
-    fun setWarp(name: String, case: Boolean) {
+    fun setWarp(name: String, case: Boolean): Boolean {
         javaClass.declaredFields.find { it.name == "${name}Warp" }
             ?.takeIf { it.genericType == Boolean::class.java }?.apply {
                 setBoolean(this, case)
                 markDirty()
                 println("Set ${this.name} warp to $case")
+                return true
             }
+        return false
     }
 
     init {

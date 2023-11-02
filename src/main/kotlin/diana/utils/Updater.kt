@@ -13,8 +13,9 @@ import java.io.InputStreamReader
 import java.net.URL
 
 class Updater {
-    private val releaseURL = "https://github.com/Doppelclick/Diana/releases/latest"
-    private val apiURL = "https://api.github.com/repos/Doppelclick/Diana/releases/latest"
+    private val releaseURL = "https://github.com/Doppelclick/Diana/releases/tag/"
+    private val apiURL
+        get() = "https://api.github.com/repos/Doppelclick/Diana/releases" + if (!Diana.config.updateCheckBeta) "/latest" else ""
     private var lastCheck: Long = 0L
 
     fun check() {
@@ -29,7 +30,9 @@ class Updater {
                 val request = URL(apiURL).openConnection()
                 request.connect()
                 val json = JsonParser()
-                val latestRelease = json.parse(InputStreamReader(request.getContent() as InputStream)).getAsJsonObject()
+                val latestRelease =
+                    if (Diana.config.updateCheckBeta) json.parse(InputStreamReader(request.getContent() as InputStream)).asJsonArray.get(0).asJsonObject
+                    else json.parse(InputStreamReader(request.getContent() as InputStream)).getAsJsonObject()
                 val latestTag = latestRelease["tag_name"].asString
                 val currentVersion = DefaultArtifactVersion(Diana.version)
                 val latestVersion = DefaultArtifactVersion(latestTag.substring(1))
@@ -38,7 +41,7 @@ class Updater {
                     val update = ChatComponentText("§l§2  [UPDATE]  ")
                     update.setChatStyle(
                         update.getChatStyle()
-                            .setChatClickEvent(ClickEvent(ClickEvent.Action.OPEN_URL, releaseURL))
+                            .setChatClickEvent(ClickEvent(ClickEvent.Action.OPEN_URL, releaseURL + latestTag))
                             .setChatHoverEvent(
                                 HoverEvent(
                                     HoverEvent.Action.SHOW_TEXT, ChatComponentText(

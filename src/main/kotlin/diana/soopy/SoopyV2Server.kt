@@ -50,12 +50,12 @@ object SoopyV2Server : WebsiteCommunicator(WebsiteConnection.socketData.getJsonO
             add("pmemb", JsonArray().apply {
                 partyMembers.forEach { this.add(JsonPrimitive(it)) }
             })
-            addProperty("limitPMemb", partyMembers.isNotEmpty() && config.sendInq != 2)
+            addProperty("limitPMemb", config.sendInq == 1)
         }
         sendData(JsonObject().apply {
             addProperty("type", "inquisData")
             add("data", data)
-            addProperty("name", mc.thePlayer.displayName.unformattedTextForChat)
+            addProperty("name", mc.thePlayer.name)
         })
     }
 
@@ -67,7 +67,8 @@ object SoopyV2Server : WebsiteCommunicator(WebsiteConnection.socketData.getJsonO
             addProperty("areaFine", areaFine)
         })
         Utils.startTimerTask(300000) {
-            if (WebsiteConnection.connected && System.currentTimeMillis() - LocationHandler.lastSentServer >= 300000) {
+            if (WebsiteConnection.connected && System.currentTimeMillis() - LocationHandler.lastSentServer >= 300000 &&
+                LocationHandler.lastServer != null) {
                 setServer(
                     LocationHandler.lastServer!!,
                     LocationHandler.area,

@@ -29,7 +29,7 @@ class Diana {
     companion object {
         const val modName = "Diana"
         const val modID = "diana"
-        const val version = "0.5"
+        const val version = "0.5-beta.2"
         const val chatTitle = "§3[Diana]§r "
         val mc = Minecraft.getMinecraft()
         val config = diana.config.Config

@@ -1,5 +1,6 @@
 package diana.commands
 
+import diana.Diana
 import diana.Diana.Companion.config
 import diana.Diana.Companion.mc
 import diana.core.Burrows
@@ -17,7 +18,8 @@ class Command : CommandBase() {
             " /diana help §7| This message§r\n" +
             " /diana ignore [list, add [player], remove [player]] §7| View / (add / remove players from) your inquis ignore list§r\n" +
             " /diana clear §7| Clear burrows§r\n" +
-            " /diana reload §7| Reload config values from file§r"
+            " /diana reload §7| Reload config values from file§r\n" +
+            " /diana enablewarp [name] §7| Enable a fast travel destination, supports tab completions§r"
 
     override fun getCommandName(): String = "diana"
 
@@ -27,12 +29,12 @@ class Command : CommandBase() {
 
     override fun addTabCompletionOptions(sender: ICommandSender?, args: Array<out String>, pos: BlockPos?): MutableList<String>? {
         if (args.size == 1) {
-            return getListOfStringsMatchingLastWord(args, "help", "ignore", "clear", "reload")
+            return getListOfStringsMatchingLastWord(args, "help", "ignore", "clear", "reload", "enablewarp")
         } else if (args.size == 2) {
-            if (args[0].equals("beacon", true)) {
-                return getListOfStringsMatchingLastWord(args, "help", "block", "beam", "text")
-            } else if (args[0].equals("ignore", true)) {
-                return getListOfStringsMatchingLastWord(args, "list", "add", "remove")
+            when (args[0].lowercase()) {
+                "beacon" -> return getListOfStringsMatchingLastWord(args, "help", "block", "beam", "text")
+                "ignore" -> return getListOfStringsMatchingLastWord(args, "list", "add", "remove")
+                "enablewarp" -> return getListOfStringsMatchingLastWord(args, Diana.warps.filter { !it.enabled.invoke() }.map { it.name })
             }
         } else if (args.size >= 3 && args[0].equals("ignore", true)) {
             if (args[1].equals("add", true)) {
@@ -96,8 +98,11 @@ class Command : CommandBase() {
             }
 
             "enablewarp" -> {
-                config.setWarp(args.getOrNull(1) ?: return, true)
-                modMessage("Enabled ${args[1]} warp.")
+                if (config.setWarp(args.getOrNull(1) ?: return, true)) {
+                    modMessage("Enabled ${args[1]} warp.")
+                } else {
+                    modMessage("§cWarp not found. Try using tab completions!")
+                }
             }
 
             "dev" -> {
