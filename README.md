@@ -21,7 +21,7 @@
 + Guesses burrow position based on ancestral spade particles, calculates an intercept using burrow arrow or last ancestral spade use (**Tip: Look up or down for more accuracy**)
 + Nearby burrow detection
 + Inquisitor waypoints shared through party/all chat and/or Soopy's server - manageable ignore list - switch between receiving/sending from/to party/all chat
-+ Warp to the waypoint you are looking at using a keybind (controls menu) - travel destinations you have not unlocked yet will be blocked in the future, re-enable them using /diana enable
++ Warp to the waypoint you are looking at using a keybind (controls menu) - travel destinations you have not unlocked yet will be blocked in the future, re-enable them using /diana enablewarp
 
 ### Command
 + **/diana**
@@ -29,13 +29,13 @@
   + ignore [list, add [player], remove [player]] | View / (add / remove players from) your inquis ignore list
   + clear | Clear burrows
   + reload | Reload config values from file
-  + enablewarp [name] | Enable a warp, that had previously been disabled automatically
+  + enablewarp [name] | Enable a fast travel destination, supports tab completions
 
 - Config file: .minecraft\config\Diana.toml
 
 ### Contact:
 [![Discord](https://img.shields.io/badge/Discord-Doppelclick-blue?style=for-the-badge&logo=appveyor)](https://discord.com/channels/@me)
-+ /msg user:558642345302687764 message:Hi!
++ Message me: /msg user:558642345302687764 message:Hi!
 
 ### Credits:
 DungeonRooms (partly NEU), the calculation from Soopy and letting me use his server, the Packet Handling from Luna, proximity values from Skytils
