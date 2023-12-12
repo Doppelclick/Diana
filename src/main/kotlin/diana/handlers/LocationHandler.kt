@@ -19,7 +19,7 @@ import java.lang.reflect.Method
 import java.util.*
 
 object LocationHandler {
-    private val serverPattern = Regex("\\d\\d/\\d\\d/\\d\\d (?<type>[mM])(?<server>\\S+)")
+    private val serverPattern = Regex("\\d\\d/\\d\\d/\\d\\d (?<type>[mM])(?<server>\\S+\\D)")
     private val locationPattern = Regex("⏣ (?<location>\\S+((\\s\\S+)?))")
 
     private var onHypixel = false
@@ -54,12 +54,12 @@ object LocationHandler {
         )?.let { line ->
             serverPattern.find(line)?.let { match ->
                 match.groups["server"]?.value?.let {
-                    val server = (if (match.groups["type"]?.value == "M") "Mega" else "mini") + it
+                    val server = (if (match.groups["type"]?.value == "M") "mega" else "mini") + it
                     if (lastServer != server && area != "UNKNOWN" && location != "UNKNOWN") {
-                        lastServer = server
                         lastSentServer = System.currentTimeMillis()
                         SoopyV2Server.setServer(server, area, location)
                     }
+                    lastServer = server
                 }
             } ?: locationPattern.find(line)?.let {
                 val sendServer = location == "UNKNOWN"
