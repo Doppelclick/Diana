@@ -33,14 +33,29 @@ object WebsiteConnection {
     private val sendDataArr = mutableListOf<String>()
 
     private val json = JsonParser()
-    val socketData: JsonObject = try {
-        val request = URL("https://soopy.dev/socketserver/data.json").openConnection()
-        request.connect()
-        json.parse(InputStreamReader(request.getContent() as InputStream).readText()).getAsJsonObject()
-    } catch (e: Exception) {
-        println("Error reading Soopy SocketData")
-        e.printStackTrace()
-        JsonObject()
+    lateinit var socketData: JsonObject
+
+    fun preInit() {
+        scope.launch {
+            socketData = loadSocketData() ?: let {
+                delay(2000)
+                loadSocketData()
+            } ?: JsonObject()
+        }
+    }
+
+    private fun loadSocketData(): JsonObject? {
+        return try {
+            val request = URL("https://soopy.dev/socketserver/data.json").openConnection()
+            request.connect()
+            InputStreamReader(request.getContent() as InputStream).use {
+                json.parse(it.readText()).getAsJsonObject()
+            }
+        } catch (e: Exception) {
+            println("Error reading Soopy SocketData")
+            e.printStackTrace()
+            null
+        }
     }
 
     fun onInit() {
@@ -163,7 +178,7 @@ object WebsiteConnection {
                     return
                 }
                 sendData(createPacket(
-                        socketData.getJsonObject("packetTypesReverse")!!.getJsonPrimitive("connectionSuccess")!!.asString,
+                        socketData.getJsonObject("packetTypesReverse")?.getJsonPrimitive("connectionSuccess")?.asString ?: "0",
                         "0",
                         JsonObject().apply {
                             addProperty("username", mc.session.profile.name) //mc.thePlayer could still be null
@@ -188,7 +203,7 @@ object WebsiteConnection {
             socketData.getJsonObject("packetTypesReverse")?.getJsonPrimitive("ping")?.asString -> {
                 sendData(
                     createPacket(
-                        socketData.getJsonObject("packetTypesReverse")!!.getJsonPrimitive("ping")!!.asString,
+                        socketData.getJsonObject("packetTypesReverse")?.getJsonPrimitive("ping")?.asString ?: "3",
                         "0"
                     )
                 )
@@ -197,7 +212,7 @@ object WebsiteConnection {
     }
 
     fun createDataPacket(data: JsonObject, server: String = socketData.getJsonObject("serverNameToId")?.getJsonPrimitive("soopyapis")?.asString ?: ""): String {
-        return createPacket(socketData.getJsonObject("packetTypesReverse")!!.getJsonPrimitive("data")!!.asString, server, data)
+        return createPacket(socketData.getJsonObject("packetTypesReverse")?.getJsonPrimitive("data")?.asString ?: "1", server, data)
     }
 
     fun createPacket(type: String, server: String = socketData.getJsonObject("serverNameToId")?.getJsonPrimitive("soopyapis")?.asString ?: "", data: JsonElement = JsonObject()): String {

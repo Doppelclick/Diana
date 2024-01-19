@@ -29,7 +29,7 @@ class Diana {
     companion object {
         const val modName = "Diana"
         const val modID = "diana"
-        const val version = "0.5"
+        const val version = "0.5.1-beta.1"
         const val chatTitle = "§3[Diana]§r "
         val mc = Minecraft.getMinecraft()
         val config = diana.config.Config
@@ -53,6 +53,7 @@ class Diana {
     @Mod.EventHandler
     fun preInit(event: FMLPreInitializationEvent) {
         File(event.modConfigurationDirectory, "").mkdirs()
+        WebsiteConnection.preInit()
         ClientCommandHandler.instance.registerCommand(Command())
         listOf(
             this,

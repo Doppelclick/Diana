@@ -30,7 +30,8 @@ object PacketHandler {
                         val particle = event.packet
                         val pos = Vec3(particle.xCoordinate, particle.yCoordinate, particle.zCoordinate)
                         val down = BlockPos(pos).down()
-                        if (particle.particleType == EnumParticleTypes.FIREWORKS_SPARK && particle.particleSpeed == 0f && particle.particleCount == 1 && Burrows.echo && config.guess && particle.xOffset == 0f && particle.yOffset == 0f && particle.zOffset == 0f) {
+                        if (particle.particleType == EnumParticleTypes.FIREWORKS_SPARK && particle.particleSpeed == 0f && particle.particleCount == 1
+                            && Burrows.echo && config.guess && particle.xOffset == 0f && particle.yOffset == 0f && particle.zOffset == 0f) {
                             Burrows.particles.add(pos)
                             Burrows.calcBurrow()
                         } else if (particle.particleType == EnumParticleTypes.REDSTONE && particle.particleSpeed == 1f && particle.particleCount == 0 && Burrows.arrow && config.guess) {
@@ -42,10 +43,7 @@ object PacketHandler {
                                 Burrows.arrowDir = dir.normalize()
                                 Burrows.arrow = false
                             }
-                        } else if (config.proximity && !Burrows.foundBurrows.contains(down) && !Burrows.dugBurrows.contains(
-                                down
-                            )
-                        ) {
+                        } else if (config.proximity && !Burrows.foundBurrows.contains(down) && !Burrows.dugBurrows.contains(down)) {
                             Burrows.waypoints.find { it.pos == down }?.takeIf { it is Waypoint.ParticleBurrowWaypoint }
                                 ?.let {
                                     (it as Waypoint.ParticleBurrowWaypoint).run {
