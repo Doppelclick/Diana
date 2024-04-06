@@ -1,5 +1,6 @@
 package diana.soopy
 
+import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -12,6 +13,7 @@ import diana.utils.toJsonObject
 import java.io.*
 import java.net.Socket
 import kotlinx.coroutines.*
+import net.minecraft.util.ResourceLocation
 import java.net.URL
 import diana.Diana.Companion.mc as mc
 
@@ -40,6 +42,18 @@ object WebsiteConnection {
             socketData = loadSocketData() ?: let {
                 delay(2000)
                 loadSocketData()
+            } ?: let {
+                println("Could not load Socket data ")
+                try {
+                    Gson().fromJson(
+                        mc.resourceManager.getResource(
+                            ResourceLocation("diana", "socketdata.json")
+                        ).inputStream.bufferedReader(),
+                        JsonObject::class.java
+                    )
+                } catch (_: Exception) {
+                    null
+                }
             } ?: JsonObject()
         }
     }
@@ -59,10 +73,14 @@ object WebsiteConnection {
     }
 
     fun onInit() {
-        handlers = arrayListOf(SoopyApisServer, SoopyV2Server)
-        connect()
-
         scope.launch {
+            while (!::socketData.isInitialized) {
+                delay(1)
+            }
+
+            handlers = arrayListOf(SoopyApisServer, SoopyV2Server)
+            connect()
+
             while (gameRunning) {
                 if (connected && socket != null) {
                     if (sendDataArr.isNotEmpty()) {
