@@ -2,8 +2,8 @@ package diana.soopy
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
-import diana.Diana.Companion.config
 import diana.Diana.Companion.mc
+import diana.config.categories.CategoryInquisitor
 import diana.handlers.EntityHandler
 import diana.handlers.LocationHandler
 import diana.utils.Utils
@@ -25,7 +25,7 @@ object SoopyV2Server : WebsiteCommunicator(WebsiteConnection.socketData.getJsonO
     override fun onDataCallback(data: JsonObject) {
         when (data.getJsonPrimitive("type")?.asString) {
             "inquisData" -> {
-                if (config.receiveInq != 0 && config.inqWaypointMode != 0) {
+                if (CategoryInquisitor.soopyServerOn()) {
                     val location = data.getJsonArray("location")?.takeIf { it.size() == 3 } ?: return
                     val user = data.getJsonPrimitive("user")?.asString ?: return
                     try {
@@ -50,7 +50,7 @@ object SoopyV2Server : WebsiteCommunicator(WebsiteConnection.socketData.getJsonO
             add("pmemb", JsonArray().apply {
                 partyMembers.forEach { this.add(JsonPrimitive(it)) }
             })
-            addProperty("limitPMemb", config.sendInq == 1)
+            addProperty("limitPMemb", CategoryInquisitor.sendMode == CategoryInquisitor.ChatChoice.PARTY)
         }
         sendData(JsonObject().apply {
             addProperty("type", "inquisData")

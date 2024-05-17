@@ -7,6 +7,7 @@ import diana.soopy.WebsiteConnection
 import diana.utils.Utils
 import gg.essential.vigilance.Vigilant
 import gg.essential.vigilance.data.*
+import gg.essential.vigilance.data.Category
 import java.awt.Color
 import java.io.File
 
@@ -46,7 +47,7 @@ object Config : Vigilant(File("./config/$modName.toml"), "Diana", sortingBehavio
     @Property(
         category = "General",
         name = "Intercept as full block",
-        description = "This will draw the burrow calculated with the intercept on a full block .",
+        description = "This will draw the burrow calculated with the intercept on a full block.",
         type = PropertyType.SWITCH,
     )
     var interceptAsFullBlock = false
@@ -248,6 +249,14 @@ object Config : Vigilant(File("./config/$modName.toml"), "Diana", sortingBehavio
     var beaconText = true
 
     @Property(
+        category = "Selector",
+        name = "Mode",
+        type = PropertyType.SELECTOR,
+        options = ["Guess Only", "All"]
+    )
+    var selectorMode = 0
+
+    @Property(
         category = "Warps",
         name = "castle",
         type = PropertyType.SWITCH,
@@ -338,6 +347,6 @@ object Config : Vigilant(File("./config/$modName.toml"), "Diana", sortingBehavio
     }
 
     private object Sorting: SortingBehavior() {
-        override fun getCategoryComparator(): Comparator<in Category> = compareBy { listOf("General", "Inquisitor", "Customisation", "Beacon", "Warps", "Debug").indexOf(it.name) }
+        override fun getCategoryComparator(): Comparator<in Category> = compareBy { listOf("General", "Inquisitor", "Customisation", "Beacon", "Selector", "Warps", "Debug").indexOf(it.name) }
     }
 }

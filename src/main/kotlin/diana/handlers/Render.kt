@@ -1,8 +1,9 @@
 package diana.handlers
 
-import diana.Diana.Companion.config
 import diana.Diana.Companion.mc
 import diana.Diana.Companion.waypointStyles
+import diana.config.categories.CategoryGeneral
+import diana.config.categories.CategoryRender
 import diana.core.Burrows
 import diana.core.Burrows.burrow
 import diana.core.Burrows.selected
@@ -25,17 +26,41 @@ object Render {
     private var interpolation: Long = 0L
     private var lastCheck = 0L
 
+    var line1: Triple<Int, Int, Int>? = null
+    var line2: Triple<Int, Int, Int>? = null
+    var arrowLength: Int? = null
+
+    fun Vec3.multiple(dist: Int): Vec3 {
+        return this.normalize().let { Vec3(it.xCoord * dist, it.yCoord * dist, it.zCoord * dist) }
+    }
+
     /**
      * Taken from DungeonRooms under Creative Commons Attribution-NonCommercial 3.0
      * https://github.com/Quantizr/DungeonRoomsMod/blob/3.x/LICENSE
      * @author Quantizr
      */
     @SubscribeEvent
-    fun worldRender(event: RenderWorldLastEvent) {
-        if (!config.toggle || (!config.beaconBlock && !config.beaconBeam && !config.beaconText) || !LocationHandler.doingDiana) return
+    fun worldRender(event: RenderWorldLastEvent) { //TODO: check if beacons are visible at all and if not, don't render
+        if (line1 != null && Burrows.particles.size - 1 >= line1!!.second) {
+            val start = Burrows.particles[line1!!.first]
+            val dir = Burrows.particles[line1!!.second].subtract(start)
+            RenderUtils.draw3DLine(start, dir.multiple(line1!!.third).add(start), Color.white.rgb, 1, true, event.partialTicks)
+        }
+        if (line2 != null && Burrows.oldParticles.size - 1 >= line2!!.second) {
+            val start = Burrows.oldParticles[line2!!.first]
+            val dir = Burrows.oldParticles[line2!!.second].subtract(start)
+            RenderUtils.draw3DLine(start, dir.multiple(line2!!.third).add(start), Color.blue.rgb, 1, true, event.partialTicks)
+        }
+        if (arrowLength != null && Burrows.arrowStart != null && Burrows.arrowDir != null) {
+            val start = Burrows.arrowStart!!
+            val dir = Burrows.arrowDir!!
+            RenderUtils.draw3DLine(start, dir.multiple(arrowLength!!).add(start), Color.red.rgb, 1, true, event.partialTicks)
+        }
+
+        if (!CategoryGeneral.modToggled || (!CategoryRender.beaconBlock && !CategoryRender.beaconBeam && !CategoryRender.beaconText)) return //  || !LocationHandler.doingDiana
         var guessPos: Vec3? = null
-        if (config.guess && burrow != null) {
-            if (config.interpolation) {
+        if (CategoryGeneral.guess && burrow != null) {
+            if (CategoryRender.interpolation) {
                 if (lastBurrow == null) lastBurrow = burrow
                 if (lastLastBurrow == null) lastLastBurrow = lastBurrow
                 guessPos = if (lastBurrow!!.distanceTo(lastLastBurrow!!) < 0.15) {
@@ -60,9 +85,13 @@ object Render {
         if (lastCheck + 75 < System.currentTimeMillis()) { //TODO: possibly adjust timing
             lastCheck = System.currentTimeMillis()
             selected = waypoints.map { Vec3(it.pos) }.plus(
-                if (config.guess && guessPos != null) listOf(guessPos)
+                if (CategoryGeneral.guess && guessPos != null) listOf(guessPos)
                 else listOf()
-            ).minByOrNull { Utils.visualDistanceTo(it, mc.thePlayer) }?.takeIf { Utils.visualDistanceTo(it, mc.thePlayer) < 129600 && it.distanceTo(mc.thePlayer.positionVector) > 15 }?.let {
+            ).minByOrNull {
+                Utils.visualDistanceTo(it, mc.thePlayer)
+            }?.takeIf {
+                Utils.visualDistanceTo(it, mc.thePlayer) < 129600 && it.distanceTo(mc.thePlayer.positionVector) > 15
+            }?.let {
                 if (it == guessPos) burrow else it
             }
         }
@@ -78,28 +107,44 @@ object Render {
             scaleTime = 0
         }
 
-        if (config.guess && guessPos != null) {
-            RenderUtils.renderBeacon(
-                event.partialTicks,
-                "§l§bGuess " + waypointStyles[Burrows.lastDug]?.first + " (" + Burrows.lastDug + ")",
-                if (burrow == selected) scale else 1f,
-                guessPos,
-                if (config.guessSeparateColor) config.guessColor else (waypointStyles[Burrows.lastDug]?.second ?: Color.BLACK),
-                1.0
-            )
+        if (CategoryGeneral.guess && guessPos != null) {
+            try {
+                RenderUtils.renderBeacon(
+                    event.partialTicks,
+                    "§l§bGuess " + waypointStyles[Burrows.lastDug]?.first + " (" + Burrows.lastDug + ")",
+                    if (burrow == selected) scale else 1f,
+                    guessPos,
+                    if (CategoryRender.guessSeparateColor) CategoryRender.guessColor else (waypointStyles[Burrows.lastDug]?.second ?: Color.BLACK),
+                    1.0
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Utils.modMessage("Hnnngh wendewing ewwow :C Pwease send log")
+            }
         }
         waypoints.toSet().forEach {
             var display = ""
             var color = Color.BLACK
-            if (it is Waypoint.ParticleBurrowWaypoint && config.proximity) {
+            if (it is Waypoint.ParticleBurrowWaypoint && CategoryGeneral.proximity) {
                 display = waypointStyles[it.type]?.first + " (" + (if (it.type == 3) "2/" else "") + it.type + ")"
                 color = waypointStyles[it.type]?.second ?: Color.BLACK
             } else if (it is Waypoint.InquisWaypoint) {
                 if (MessageHandler.partyMembers.contains(it.player)) display = "§9"
                 display = display + it.player + "§r's §6Inquisitor"
-                color = config.inquisitorColor
+                color = CategoryRender.inquisitorColor
             }
-            RenderUtils.renderBeacon(event.partialTicks, display, if (it.pos == selected?.let { BlockPos(it) }) scale else 1f, Vec3(it.pos), color)
+            try {
+                RenderUtils.renderBeacon(
+                    event.partialTicks,
+                    display,
+                    if (it.pos == selected?.let { BlockPos(it) }) scale else 1f,
+                    Vec3(it.pos),
+                    color
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Utils.modMessage("Hnnngh wendewing ewwow :C Pwease send log")
+            }
         }
     }
 

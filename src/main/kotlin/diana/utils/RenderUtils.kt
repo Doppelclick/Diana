@@ -1,7 +1,8 @@
 package diana.utils
 
-import diana.Diana.Companion.config
 import diana.Diana.Companion.mc
+import diana.config.categories.CategoryRender
+import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.client.renderer.Tessellator
 import net.minecraft.client.renderer.culling.Frustum
@@ -14,8 +15,32 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+
 object RenderUtils {
     private val beaconBeam = ResourceLocation("textures/entity/beacon_beam.png")
+
+    /*
+    private fun dot(fs: FloatArray, d: Double, e: Double, f: Double): Double {
+        return fs[0].toDouble() * d + fs[1].toDouble() * e + fs[2].toDouble() * f + fs[3].toDouble()
+    }
+    fun isBoxTouchingFrustum(d: Double, e: Double, f: Double, g: Double, h: Double, i: Double): Boolean {
+        val frustum = ClippingHelperImpl.getInstance().frustum
+        for (j in 0..5) {
+            val fs: FloatArray = frustum[j]
+            //if ((!(this.dot(fs, d, e, f) > 0.0) || !(this.dot(fs, g, h, i) > 0.0)) && (!(this.dot(fs, g, e, f) > 0.0) || !(this.dot(fs, d, h, i) > 0.0))
+            //    && (!(this.dot(fs, d, h, f) > 0.0) || !(this.dot(fs, g, e, i) > 0.0)) && (!(this.dot(fs, g, h, f) > 0.0) || !(this.dot(fs, d, e, i) > 0.0))
+            //) {
+            //    return false
+            //}
+            if (!(this.dot(fs, d, e, f) > 0.0) && !(this.dot(fs, g, e, f) > 0.0) && !(this.dot(fs, d, h, f) > 0.0) && !(this.dot(fs, g, h, f) > 0.0)
+                //t&& !(this.dot(fs, d, e, i) > 0.0) && !(this.dot(fs, g, e, i) > 0.0) && !(this.dot(fs, d, h, i) > 0.0) && !(this.dot(fs, g, h, i) > 0.0)
+                ) {
+                return false
+            }
+        }
+        return true
+    }
+    */
 
     fun renderBeacon(partialTicks: Float, info: String?, scale: Float, pos: Vec3, color: Color, textHeight: Double = 0.0) {
         var scale2 = scale
@@ -32,9 +57,9 @@ object RenderUtils {
         GlStateManager.disableDepth()
         GlStateManager.disableCull()
         if (distSq > 35) {
-            if (config.beaconBeam) renderBeaconBeam(x, y + scale2, z, color.rgb, 0.25f, partialTicks)
+            if (CategoryRender.beaconBeam) renderBeaconBeam(x, y + scale2, z, color.rgb, 0.25f, partialTicks)
         } else scale2 = 1f
-        if (config.beaconBlock && frustum.isBoxInFrustum(
+        if (CategoryRender.beaconBlock && frustum.isBoxInFrustum(
                 pos.xCoord,
                 pos.yCoord,
                 pos.zCoord,
@@ -53,7 +78,7 @@ object RenderUtils {
             ), color, 0.4f
         )
         GlStateManager.disableTexture2D()
-        if (config.beaconText) renderWaypointText(
+        if (CategoryRender.beaconText) renderWaypointText(
             info,
             pos.addVector(0.0, scale2.toDouble() + textHeight, 0.0),
             partialTicks,
@@ -73,6 +98,7 @@ object RenderUtils {
     private fun renderBeaconBeam(x: Double, y: Double, z: Double, rgb: Int, alphaMultiplier: Float, partialTicks: Float) {
         val height = 300
         val bottomOffset = 0
+        //if (!isBoxTouchingFrustum(x, y, z, x + 1, y + height, z + 1)) return
         val topOffset = bottomOffset + height
         val tessellator = Tessellator.getInstance()
         val worldrenderer = tessellator.worldRenderer
@@ -225,7 +251,7 @@ object RenderUtils {
      * https://github.com/Moulberry/NotEnoughUpdates/blob/master/LICENSE
      * @author Moulberry
      */
-    private fun renderWaypointText(str: String?, loc: Vec3, partialTicks: Float, scale: Float) {
+    private fun renderWaypointText(str: String?, loc: Vec3, partialTicks: Float, scale: Float) { //TODO: Fix rendering too close towards the player
         GlStateManager.alphaFunc(516, 0.1f)
         GlStateManager.pushMatrix()
         val viewer = mc.renderViewEntity
@@ -291,6 +317,47 @@ object RenderUtils {
         fontrenderer.drawString(str, -j, i, -1)
         GlStateManager.enableDepth()
         GlStateManager.enableBlend()
+        GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f)
+        GlStateManager.popMatrix()
+    }
+
+
+    //DANKER'S SKYBLOCK MOD
+    fun draw3DLine(pos1: Vec3, pos2: Vec3, colourInt: Int, lineWidth: Int, depth: Boolean, partialTicks: Float) {
+        val render = Minecraft.getMinecraft().renderViewEntity
+        val worldRenderer = Tessellator.getInstance().worldRenderer
+        val colour = Color(colourInt)
+
+        val realX = render.lastTickPosX + (render.posX - render.lastTickPosX) * partialTicks
+        val realY = render.lastTickPosY + (render.posY - render.lastTickPosY) * partialTicks
+        val realZ = render.lastTickPosZ + (render.posZ - render.lastTickPosZ) * partialTicks
+
+        GlStateManager.pushMatrix()
+        GlStateManager.translate(-realX, -realY, -realZ)
+        GlStateManager.disableTexture2D()
+        GlStateManager.enableBlend()
+        GlStateManager.disableAlpha()
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0)
+        GL11.glLineWidth(lineWidth.toFloat())
+        if (!depth) {
+            GL11.glDisable(GL11.GL_DEPTH_TEST)
+            GlStateManager.depthMask(false)
+        }
+        GlStateManager.color(colour.red / 255f, colour.green / 255f, colour.blue / 255f, colour.alpha / 255f)
+        worldRenderer.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION)
+
+        worldRenderer.pos(pos1.xCoord, pos1.yCoord, pos1.zCoord).endVertex()
+        worldRenderer.pos(pos2.xCoord, pos2.yCoord, pos2.zCoord).endVertex()
+        Tessellator.getInstance().draw()
+
+        GlStateManager.translate(realX, realY, realZ)
+        if (!depth) {
+            GL11.glEnable(GL11.GL_DEPTH_TEST)
+            GlStateManager.depthMask(true)
+        }
+        GlStateManager.disableBlend()
+        GlStateManager.enableAlpha()
+        GlStateManager.enableTexture2D()
         GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f)
         GlStateManager.popMatrix()
     }

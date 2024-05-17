@@ -1,7 +1,7 @@
 package diana.handlers
 
-import diana.Diana.Companion.config
 import diana.Diana.Companion.mc
+import diana.config.categories.CategoryGeneral
 import diana.core.Burrows
 import diana.core.Warp
 import diana.utils.Utils
@@ -16,12 +16,12 @@ object Keybindings {
     )
     @SubscribeEvent
     fun key(event: KeyInputEvent) {
-        if (!config.toggle || !LocationHandler.doingDiana || mc.thePlayer == null) return
+        if (!CategoryGeneral.modToggled || !LocationHandler.doingDiana || mc.thePlayer == null) return
         if (keybindings[0].isPressed) {
             Warp.closest(Burrows.selected?: return)?.let { warp ->
                 if (warp.pos.distanceTo(Burrows.selected) * 1.1 < mc.thePlayer.positionVector.distanceTo(Burrows.selected)) {
                     mc.thePlayer.sendChatMessage("/warp " + warp.name)
-                    if (config.messages) Utils.modMessage("Warped to " + warp.name)
+                    if (CategoryGeneral.notifications.contains(CategoryGeneral.MessageChoice.WARPED)) Utils.modMessage("Warped to " + warp.name)
                     Warp.lastwarp = warp.name
                 }
             }

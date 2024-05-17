@@ -1,8 +1,8 @@
 package diana.handlers
 
 import com.google.common.collect.ComparisonChain
-import diana.Diana.Companion.config
 import diana.Diana.Companion.mc
+import diana.config.categories.CategoryDebug
 import diana.core.Burrows
 import diana.core.Warp
 import diana.soopy.SoopyV2Server
@@ -25,7 +25,7 @@ object LocationHandler {
     private var onHypixel = false
     var area: String = "UNKNOWN"
     var location: String = "UNKNOWN" //more specific than area
-    val inHub get() = if (config.forceHub) true else area == "Hub"
+    val inHub get() = if (CategoryDebug.forceHub) true else area == "Hub"
     var doingDiana = false
 
     var lastServer: String? = null

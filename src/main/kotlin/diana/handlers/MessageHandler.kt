@@ -1,8 +1,11 @@
 package diana.handlers
 
-import diana.Diana.Companion.config
 import diana.Diana.Companion.mc
 import diana.Diana.Companion.warps
+import diana.config.categories.CategoryInquisitor
+import diana.config.categories.CategoryInquisitor.ChatChoice
+import diana.config.categories.CategoryInquisitor.InqModeChoice
+import diana.config.categories.CategoryWarps
 import diana.core.Burrows
 import diana.core.Warp
 import diana.utils.Utils
@@ -96,8 +99,8 @@ object MessageHandler {
                 }
             }
             inParty = true
-        } ?: (inquisPattern.find(unformatted) ?: coordsPattern.takeIf { config.receiveInqFromPatcher }?.find(unformatted))?.takeIf {
-                sender != null && sender != mc.thePlayer.name && config.receiveInq != 0 && config.inqWaypointMode != 1 }?.let {
+        } ?: (inquisPattern.find(unformatted) ?: coordsPattern.takeIf { CategoryInquisitor.allowPatcher }?.find(unformatted))?.takeIf {
+                sender != null && sender != mc.thePlayer.name && CategoryInquisitor.receiveMode != ChatChoice.NONE && CategoryInquisitor.inqMode.contains(InqModeChoice.CHAT) }?.let {
                     val pos = BlockPos(
                         it.groups["one"]?.value?.toIntOrNull() ?: return,
                         it.groups["two"]?.value?.toIntOrNull() ?: return,
@@ -128,7 +131,7 @@ object MessageHandler {
                 if (Warp.lastwarp != "hub") {
                     warps.find { it.name == Warp.lastwarp }?.apply {
                         if (this.enabled()) {
-                            config.setWarp(Warp.lastwarp, false)
+                            CategoryWarps.setWarp(Warp.lastwarp, false)
                         }
                     }
                 }

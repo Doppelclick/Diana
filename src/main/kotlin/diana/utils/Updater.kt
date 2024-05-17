@@ -2,6 +2,7 @@ package diana.utils
 
 import diana.Diana
 import com.google.gson.JsonParser
+import diana.config.categories.CategoryGeneral
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.minecraft.event.ClickEvent
@@ -15,7 +16,7 @@ import java.net.URL
 class Updater {
     private val releaseURL = "https://github.com/Doppelclick/Diana/releases/tag/"
     private val apiURL
-        get() = "https://api.github.com/repos/Doppelclick/Diana/releases" + if (!Diana.config.updateCheckBeta) "/latest" else ""
+        get() = "https://api.github.com/repos/Doppelclick/Diana/releases" + if (!CategoryGeneral.updateCheckBeta) "/latest" else ""
     private var lastCheck: Long = 0L
 
     fun check() {
@@ -31,7 +32,7 @@ class Updater {
                 request.connect()
                 val json = JsonParser()
                 val latestRelease =
-                    if (Diana.config.updateCheckBeta) json.parse(InputStreamReader(request.getContent() as InputStream)).asJsonArray.get(0).asJsonObject
+                    if (CategoryGeneral.updateCheckBeta) json.parse(InputStreamReader(request.getContent() as InputStream)).asJsonArray.get(0).asJsonObject
                     else json.parse(InputStreamReader(request.getContent() as InputStream)).getAsJsonObject()
                 val latestTag = latestRelease["tag_name"].asString
                 val currentVersion = DefaultArtifactVersion(Diana.version)

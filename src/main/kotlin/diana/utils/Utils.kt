@@ -79,4 +79,18 @@ object Utils {
             }
         }, delay)
     }
+
+    fun intercept(first: Vec3, second: Vec3, third: Vec3, fourth: Vec3): Vec3? {
+        return interceptDirection(first, second.subtract(first), third, fourth.subtract(third))
+    }
+
+    fun interceptDirection(base: Vec3, direction: Vec3, other: Vec3, otherDirection: Vec3): Vec3? {
+        //The following calculation is from Synthesis made by Luna
+        val a = direction.zCoord / direction.xCoord * base.xCoord - base.zCoord
+        val b = otherDirection.zCoord / otherDirection.xCoord * other.xCoord - other.zCoord
+        val x = ((a - b) / (direction.zCoord / direction.xCoord - otherDirection.zCoord / otherDirection.xCoord)).apply { if (this.isNaN()) return null }
+        val z = (direction.zCoord / direction.xCoord * x - a).apply { if (this.isNaN()) return null }
+
+        return Vec3(x, 0.0, z)
+    }
 }

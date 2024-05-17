@@ -4,8 +4,9 @@ import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import diana.Diana.Companion.config
 import diana.Diana.Companion.scope
+import diana.config.categories.CategoryGeneral
+import diana.config.categories.CategoryInquisitor
 import diana.utils.Utils
 import diana.utils.getJsonObject
 import diana.utils.getJsonPrimitive
@@ -98,13 +99,13 @@ object WebsiteConnection {
         }
     }
 
-    fun onGameUnload() {
+    fun onGameShutdown() {
         gameRunning = false
         disconnect()
     }
 
     fun connect(preConfig: Boolean = false, preConfigToggle: Boolean = false) {
-        if ((!config.toggle &&! preConfigToggle) || !gameRunning || connected || !socketData.has("port") || (!preConfig && (config.inqWaypointMode == 0 || (config.receiveInq == 0 && config.sendInq == 0)))) return
+        if ((!CategoryGeneral.modToggled &&! preConfigToggle) || !gameRunning || connected || !socketData.has("port") || (!preConfig && CategoryInquisitor.soopyServerOn())) return
 
         connectedFull = false
         println("Connecting to Soopy socket")
