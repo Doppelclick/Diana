@@ -1,6 +1,5 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import dev.architectury.pack200.java.Pack200Adapter
-import net.fabricmc.loom.task.RemapJarTask
+import org.apache.commons.lang3.SystemUtils
 
 plugins {
     kotlin("jvm") version "1.9.0"
@@ -11,18 +10,46 @@ plugins {
     java
 }
 
-repositories {
-    maven("https://repo.sk1er.club/repository/maven-public/")
-    maven("https://repo.spongepowered.org/repository/maven-public/")
-    //maven("https://jitpack.io/")
+val baseGroup: String by project
+val mcVersion: String by project
+val modVersion: String by project
+project.version = modVersion
+val modID: String by project
+val modName: String by project
+
+loom {
+    log4jConfigs.from(file("log4j2.xml"))
+    launchConfigs {
+        "client" {
+            property("mixin.debug", "true")
+            property("asmhelper.verbose", "true")
+            arg("--tweakClass", "org.spongepowered.asm.launch.MixinTweaker")
+            arg("--mixin", "mixins.${modID}.json")
+        }
+    }
+    runConfigs {
+        "client" {
+            if (SystemUtils.IS_OS_MAC_OSX) {
+                vmArgs.remove("-XstartOnFirstThread")
+            }
+        }
+        remove(getByName("server"))
+    }
+    forge {
+        pack200Provider.set(Pack200Adapter())
+        mixinConfig("mixins.$modID.json")
+    }
+    mixin.defaultRefmapName.set("mixins.$modID.refmap.json")
 }
 
-val modName: String by project
-val modID: String by project
-val modVersion: String by project
+sourceSets.main {
+    output.setResourcesDir(sourceSets.main.flatMap { it.java.classesDirectory })
+}
 
-version = modVersion
-group = modID
+repositories {
+    mavenCentral()
+    maven("https://repo.spongepowered.org/maven/")
+}
 
 val shadowMe: Configuration by configurations.creating {
     configurations.implementation.get().extendsFrom(this)
@@ -33,83 +60,71 @@ dependencies {
     mappings("de.oceanlabs.mcp:mcp_stable:22-1.8.9")
     forge("net.minecraftforge:forge:1.8.9-11.15.1.2318-1.8.9")
 
-    shadowMe("gg.essential:loader-launchwrapper:1.1.3")
-    implementation("gg.essential:essential-1.8.9-forge:12132+g6e2bf4dc5")
-
-    annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
-    compileOnly("org.spongepowered:mixin:0.8.5")
-}
-
-sourceSets.main {
-    output.setResourcesDir("${buildDir}/classes/kotlin/main")
-}
-
-loom {
-    silentMojangMappingsLicense()
-    launchConfigs.getByName("client") {
-        property("mixin.debug", "true")
-        property("asmhelper.verbose", "true")
-        arg("--tweakClass", "gg.essential.loader.stage0.EssentialSetupTweaker")
-        arg("--mixin", "mixins.${modID}.json")
+    shadowMe("org.spongepowered:mixin:0.7.11-SNAPSHOT") {
+        isTransitive = false
     }
-    runConfigs {
-        getByName("client") {
-            isIdeConfigGenerated = true
-        }
-        remove(getByName("server"))
-    }
-    forge {
-        pack200Provider.set(Pack200Adapter())
-        mixinConfig("mixins.${modID}.json")
-    }
-    mixin.defaultRefmapName.set("mixins.${modID}.refmap.json")
+    annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT")
+    shadowMe("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24")
+    shadowMe("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 }
 
 tasks {
-    processResources {
-        inputs.property("modName", modName)
-        inputs.property("modID", modID)
-        inputs.property("version", project.version)
-        inputs.property("mcversion", "1.8.9")
-
-        filesMatching(listOf("mcmod.info", "mixins.${modID}.json")) {
-            expand(mapOf(
-                "modName" to modName,
-                "modID" to modID,
-                "version" to project.version,
-                "mcversion" to "1.8.9"
-            ))
-        }
-        dependsOn(compileJava)
+    withType(JavaCompile::class) {
+        options.encoding = "UTF-8"
     }
-    named<Jar>("jar") {
+
+    withType(Jar::class) {
+        archiveBaseName.set(modID)
         manifest.attributes(
             "FMLCorePluginContainsFMLMod" to true,
             "FMLCorePlugin" to "${modID}.forge.DianaLoadingPlugin",
             "ForceLoadAsMod" to true,
-            "MixinConfigs" to "mixins.${modID}.json",
+            "MixinConfigs" to "mixins.$modID.json",
             "ModSide" to "CLIENT",
-            "TweakClass" to "gg.essential.loader.stage0.EssentialSetupTweaker",
+            "TweakClass" to "org.spongepowered.asm.launch.MixinTweaker",
             "TweakOrder" to "0"
         )
-        dependsOn(shadowJar)
-        enabled = false
     }
-    named<RemapJarTask>("remapJar") {
-        archiveBaseName.set(modName)
+
+    processResources {
+        inputs.property("version", version)
+        inputs.property("mcversion", mcVersion)
+        inputs.property("modID", modID)
+        inputs.property("modName", modName)
+
+        filesMatching(listOf("mcmod.info", "mixins.$modID.json")) {
+            expand(inputs.properties)
+        }
+
+        rename("(.+_at.cfg)", "META-INF/$1")
+    }
+
+
+    val remapJar by named<net.fabricmc.loom.task.RemapJarTask>("remapJar") {
+        archiveClassifier.set("")
+        from(shadowJar)
         input.set(shadowJar.get().archiveFile)
     }
-    named<ShadowJar>("shadowJar") {
-        archiveBaseName.set(modName)
-        archiveClassifier.set("dev")
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    jar {
+        archiveClassifier.set("without-deps")
+        destinationDirectory.set(layout.buildDirectory.dir("badjars"))
+    }
+
+    shadowJar {
+        destinationDirectory.set(layout.buildDirectory.dir("badjars"))
+        archiveClassifier.set("all-dev")
         configurations = listOf(shadowMe)
-        mergeServiceFiles()
+        doLast {
+            configurations.forEach {
+                println("Copying jars into mod: ${it.files}")
+            }
+        }
+
+        fun relocate(name: String) = relocate(name, "$baseGroup.deps.$name")
     }
-    withType<JavaCompile> {
-        options.encoding = "UTF-8"
-    }
+
+    assemble.get().dependsOn(remapJar)
 }
 
 java.toolchain.languageVersion.set(JavaLanguageVersion.of(8))
-kotlin.jvmToolchain(8)

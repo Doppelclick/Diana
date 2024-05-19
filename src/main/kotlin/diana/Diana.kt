@@ -17,7 +17,6 @@ import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
 import java.awt.Color
-import java.io.File
 import kotlin.coroutines.EmptyCoroutineContext
 
 @Mod(
@@ -25,8 +24,7 @@ import kotlin.coroutines.EmptyCoroutineContext
     modid = Diana.modID,
     version = Diana.version,
     clientSideOnly = true,
-    acceptedMinecraftVersions = "[1.8.9]",
-    modLanguageAdapter = "gg.essential.api.utils.KotlinAdapter"
+    acceptedMinecraftVersions = "[1.8.9]"
 )
 class Diana {
     companion object {
