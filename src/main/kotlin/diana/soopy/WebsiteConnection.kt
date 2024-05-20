@@ -105,7 +105,10 @@ object WebsiteConnection {
     }
 
     fun connect(preConfig: Boolean = false, preConfigToggle: Boolean = false) {
-        if ((!CategoryGeneral.modToggled &&! preConfigToggle) || !gameRunning || connected || !socketData.has("port") || (!preConfig && CategoryInquisitor.soopyServerOn())) return
+        if (!(preConfigToggle || CategoryGeneral.modToggled) // Mod toggled
+            || !(preConfig || CategoryInquisitor.soopyServerOn()) // Config options for Soopy Server Inquis handling
+            || !gameRunning || connected || !socketData.has("port")
+        ) return
 
         connectedFull = false
         println("Connecting to Soopy socket")
@@ -160,7 +163,7 @@ object WebsiteConnection {
     }
 
     fun disconnect() {
-        if (!connected || socket != null) {
+        if (connected && socket != null) {
             println("Disconnecting from soopy socket")
             connected = false
             writer?.close()
