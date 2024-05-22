@@ -21,8 +21,8 @@ object CategoryGeneral : Category("General") {
     var guess by boolean("Guess", true).apply { description = "Whether the mod should guess the location of the burrow." }
     var calculateIntercept by boolean("Intercept", true).apply { description = "Whether the mod should calculate an intercept as the burrow guess." }
     var interceptFullBlock by boolean("Intercept as full block", true).apply { description = "This will draw the burrow calculated with the intercept on a full block." }
+    var accuracyChecks by boolean("Accuracy Checks", true).dev()
     var guessTolerance by float("Guess Tolerance", 5f, 0f..100f).dev().apply { description = "Tolerance for intercept calculation to prevent 'flickering'." }
-    var ignoreAccuracyChecks by boolean("Guess Tolerance", true).dev()
     var proximity by boolean("Proximity detection", true).apply { description = "Detects nearby burrows." }
     var notifications by multiChoice("Notifications", MultiChooseList(), MessageChoice.entries.toMultiChooseList())
 

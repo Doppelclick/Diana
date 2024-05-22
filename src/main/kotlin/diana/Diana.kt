@@ -9,6 +9,7 @@ import diana.handlers.*
 import diana.soopy.WebsiteConnection
 import kotlinx.coroutines.CoroutineScope
 import net.minecraft.client.Minecraft
+import net.minecraft.util.ResourceLocation
 import net.minecraft.util.Vec3
 import net.minecraftforge.client.ClientCommandHandler
 import net.minecraftforge.common.MinecraftForge
@@ -33,6 +34,7 @@ class Diana {
         const val version = "0.6-beta.1"
         const val chatTitle = "§3[Diana]§r "
         val mc = Minecraft.getMinecraft()
+        val icon = ResourceLocation("diana", "griffin.png")
         val configSystem = ConfigSystem()
         val scope = CoroutineScope(EmptyCoroutineContext)
         val warps = arrayOf(

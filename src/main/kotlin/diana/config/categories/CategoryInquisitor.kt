@@ -38,7 +38,7 @@ object CategoryInquisitor : Category("Inquisitor") {
             return@listen it
         }.apply { description = "From who to receive inquisitor waypoints." }
 
-    var allowPatcher by boolean("Patcher Coords", false).apply { description = "When someone uses /patcher sendcoords  it will act the same as a Diana inquis waypoint." }
+    var allowPatcher by boolean("Patcher Coords", false).apply { description = "When someone uses /patcher sendcoords\n it will act the same as a Diana inquis waypoint." }
     var inqWaypointTimeout by int("Waypoint Timeout", 30000, 0..120000).dev()
     var ignoredPlayers by text("Ignored Players", "").hidden()
 

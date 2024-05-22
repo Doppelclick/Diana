@@ -9,6 +9,7 @@ import diana.config.categories.*
 import diana.config.json.CategorySerializer
 import diana.config.json.EnumChoiceSerializer
 import diana.config.json.ExcludeStrategy
+import diana.gui.ConfigGui
 import java.io.File
 import java.io.Reader
 import java.io.Writer
@@ -32,7 +33,8 @@ class ConfigSystem {
         CategorySelector,
         CategoryWarps,
         CategoryRender,
-        CategoryDebug
+        CategoryDebug,
+        CategoryTest
     )
 
     fun load() {
@@ -51,6 +53,11 @@ class ConfigSystem {
         }
     }
 
+    fun reload() {
+        load()
+        ConfigGui.onConfigReload()
+    }
+
     fun storeAll() {
         configFile.runCatching {
             if (!exists()) {
@@ -66,7 +73,11 @@ class ConfigSystem {
     }
 
     private fun serializeCategory(categories: List<Category>, writer: Writer, gson: Gson = this.gson) {
-        writer.use { it.write(gson.toJson(categories.map { gson.toJson(it, categoryType) })) }
+        writer.use {
+            it.write(gson.toJson(
+                categories.map { gson.toJsonTree(it, categoryType) }
+            ))
+        }
     }
 
     private fun deserializeCategories(reader: Reader, gson: Gson = this.gson) {

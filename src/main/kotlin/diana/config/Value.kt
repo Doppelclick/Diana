@@ -4,7 +4,10 @@ import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
 import diana.config.json.Exclude
+import java.awt.Color
+import java.util.*
 import java.util.function.Predicate
+import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.reflect.KProperty
 
@@ -92,6 +95,24 @@ open class Value<T : Any>(
         dependencies.add(predicate)
         return this
     }
+
+    @Suppress("UNCHECKED_CAST")
+    open fun setByString(string: String) {
+        if (this.value is Boolean) {
+            val newValue = when (string.lowercase(Locale.ROOT)) {
+                "true", "on" -> true
+                "false", "off" -> false
+                else -> throw IllegalArgumentException()
+            }
+
+            set(newValue as T)
+        } else if (this.value is Color) {
+            if (string.startsWith("#")) set(Color(string.substring(1).toInt(16)) as T)
+            else set(Color(string.toInt()) as T)
+        } else {
+            throw IllegalStateException()
+        }
+    }
 }
 
 enum class ValueType {
@@ -119,7 +140,10 @@ class RangedValue<T : Any>(
     }
 }
 
-class ActionValue<T : () -> Unit>(
+
+typealias Action = () -> Unit
+
+class ActionValue<T : Action>(
     name: String, value: T
 ) : Value<T>(name, value, ValueType.ACTION) {
     init {
@@ -134,11 +158,11 @@ class ChooseListValue<T: NamedChoice>(
     override fun deserializeFrom(gson: Gson, element: JsonElement) {
         val name = element.asString
 
-        setFromValueName(name)
+        setByString(name)
     }
 
-    fun setFromValueName(name: String?) {
-        this.value = choices.first { it.choiceName == name }
+    override fun setByString(string: String) {
+        this.value = choices.first { it.choiceName == string }
     }
 }
 
@@ -162,18 +186,16 @@ class MultiChooseListValue<T: NamedChoice>(
         element.asJsonArray.mapNotNullTo(value) { c -> choices.find { it.choiceName == c.asString } }
     }
 
-    /*
-    fun setFromValueName(name: String?, add: Boolean? = null) {
-        choices.find { it.choiceName == name }?.let {
-            setV(it)
+    override fun setByString(string: String) {
+        choices.find { it.choiceName == string }?.let {
+            set(it)
         }
     }
 
-    fun setV(choice: T, add: Boolean? = null) {
-        if (add == true || (add == null && !value.remove(choice))) value.add(choice)
-        else if (add == false) value.remove(choice)
+    fun set(t: T) {
+        if (value.contains(t)) value.remove(t)
+        else value.add(t)
     }
-     */
 }
 
 interface NamedChoice {

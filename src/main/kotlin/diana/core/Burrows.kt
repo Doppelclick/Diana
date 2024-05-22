@@ -105,7 +105,7 @@ object Burrows {
         val intercept = Utils.interceptDirection(p1, v1, p2, v2)?.let {
             it.addVector(0.0, getHeight(it.xCoord.roundToInt(), it.zCoord.roundToInt()) ?: burrow?.yCoord ?: 60.0, 0.0)
         } ?: return
-        if (guessPos != null &&! CategoryGeneral.ignoreAccuracyChecks) {
+        if (guessPos != null && CategoryGeneral.accuracyChecks) {
             val relGuess = sqrt(guessPos!!.distanceTo(playerPos))
             if (intercept.distanceTo(guessPos) > (relGuess + CategoryGeneral.guessTolerance)) {
                 return

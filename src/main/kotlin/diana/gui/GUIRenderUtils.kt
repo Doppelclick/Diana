@@ -2,11 +2,13 @@ package diana.gui
 
 import diana.Diana.Companion.mc
 import net.minecraft.client.gui.FontRenderer
+import net.minecraft.client.gui.Gui
 import net.minecraft.client.gui.ScaledResolution
 import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.client.renderer.Tessellator
 import net.minecraft.client.renderer.WorldRenderer
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats
+import net.minecraft.util.ResourceLocation
 import org.lwjgl.opengl.GL11
 import java.awt.Color
 import kotlin.math.*
@@ -14,7 +16,7 @@ import kotlin.math.*
 
 object GUIRenderUtils {
     private val tessellator: Tessellator = Tessellator.getInstance()
-    private val worldRenderer: WorldRenderer = tessellator.worldRenderer
+    val worldRenderer: WorldRenderer = tessellator.worldRenderer
     val fontRenderer: FontRenderer = mc.fontRendererObj
 
     fun renderRect(x: Double, y: Double, w: Double, h: Double, color: Color) {
@@ -64,7 +66,7 @@ object GUIRenderUtils {
         GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0)
         GlStateManager.color(color.red / 255f, color.green / 255f, color.blue / 255f, color.alpha / 255f)
 
-        GL11.glBegin(6)
+        GL11.glBegin(GL11.GL_TRIANGLE_FAN)
         corner(x + w - radius, y + h - radius, radius, 0, 90)
         corner(x + w - radius, y + radius, radius, 90, 180)
         corner(x + radius, y + radius, radius, 180, 270)
@@ -74,6 +76,14 @@ object GUIRenderUtils {
         GlStateManager.disableAlpha()
         GlStateManager.enableTexture2D()
         GlStateManager.disableBlend()
+    }
+
+    fun renderImage(resource: ResourceLocation, x: Int, y: Int, width: Int, height: Int, textureWidth: Float = width.toFloat(), textureHeight: Float = height.toFloat(), u: Float = 0f, v: Float = 0f) {
+        GlStateManager.pushMatrix()
+        GlStateManager.color(255f,255f,255f,255f)
+        ConfigGui.mc.textureManager.bindTexture(resource)
+        Gui.drawModalRectWithCustomSizedTexture(x, y, u, v, width, height, textureWidth, textureHeight)
+        GlStateManager.popMatrix()
     }
 
     private fun addQuadVertices(x: Double, y: Double, w: Double, h: Double) {
@@ -136,5 +146,9 @@ object GUIRenderUtils {
         GlStateManager.scale(scale, scale, 1f)
         drawString(text, x / scale, y / scale, color.rgb, shadow)
         GlStateManager.scale(1 / scale, 1 / scale, 1f)
+    }
+
+    fun Color.fullAlpha() : Color {
+        return Color(this.rgb, false)
     }
 }

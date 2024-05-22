@@ -17,7 +17,7 @@ object CategorySerializer : JsonSerializer<Category> {
         val obj = JsonObject()
 
         obj.addProperty("name", src.name)
-        obj.add("value", context.serialize(src.value))
+        obj.add("value", context.serialize(src.value.filter { !it.doNotInclude }))
 
         return obj
     }

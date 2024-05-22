@@ -4,7 +4,6 @@ import diana.Diana
 import diana.config.Category
 import diana.config.Visibility
 import diana.config.categories.CategoryGeneral
-import diana.gui.GUIRenderUtils.fontRenderer
 import diana.gui.GUIRenderUtils.renderScaledText
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiScreen
@@ -27,6 +26,7 @@ object ConfigGui: GuiScreen() {
         get() = CategoryGeneral.theme.themeClass
     private var hoverText: List<String> = listOf()
     private var searchCategory = false
+    val searchBar = TextInputField(1460.0 - 300.0, 40.0, 300.0, 40.0, searchField = true)
 
     override fun drawScreen(mouseX: Int, mouseY: Int, partialTicks: Float) {
         hoverText = listOf()
@@ -39,27 +39,39 @@ object ConfigGui: GuiScreen() {
         GUIRenderUtils.renderRect(0.0,0.0, scaledResolution.scaledWidth_double, scaledResolution.scaledHeight_double, theme.backGroundColor()) // Background
         GlStateManager.scale(scale, scale, 1.0)
 
+        // Render header
+        val titleScale = (70 - 14) / fontRendererObj.FONT_HEIGHT.toFloat()
+        val dianaWidth = fontRendererObj.getStringWidth("Diana") * titleScale
+        val dianaVersionScale = titleScale * 0.3f
+        GUIRenderUtils.renderRoundedRect(140.0, 20.0, 70.0 + dianaWidth + 4 + fontRendererObj.getStringWidth(Diana.version) * dianaVersionScale + 10, 70.0, theme.categoryBackgroundColor(), 10.0)
+        fontRendererObj.renderScaledText("Diana", 140f + 70f, 20f + 7f + (70f - fontRendererObj.FONT_HEIGHT * titleScale) / 2f, theme.settingBrightColor(), titleScale)
+        fontRendererObj.renderScaledText(Diana.version, 140f + 70f + dianaWidth + 7f, 20f + 70f - 7f - fontRendererObj.FONT_HEIGHT * dianaVersionScale, theme.settingDarkColor(), dianaVersionScale)
+        GUIRenderUtils.renderImage(Diana.icon, 140 + 7, 20 + 7, 70 - 14, 70 - 14)
+
+        // Render menus
         CategoryTab.drawCategoryList()
         openedCategory.drawScreen(mouseX / scale, mouseY / scale, theme, scale)
-        SearchBar.drawScreen(mouseX / scale, mouseY / scale, partialTicks, scale, theme)
+        searchBar.drawScreen(mouseX / scale, mouseY / scale, scale, theme)
 
         if (hoverText.isNotEmpty()) {
             val height = 10 + hoverText.size * (fontRendererObj.FONT_HEIGHT + 1) * 2.0
+            val width = hoverText.maxOf { fontRendererObj.getStringWidth(it) }.toDouble() * 2.0
             val hx = mouseX / scale
+            val xPos = hx - if (hx in 0.0..1000.0) 0.0 else (width - 10.0)
             val hy = mouseY / scale - height
             GUIRenderUtils.renderRoundedRect(
-                hx,
+                xPos,
                 hy,
-                10 + hoverText.maxOf { fontRendererObj.getStringWidth(it) }.toDouble() * 2.0,
+                10 + width,
                 height,
                 theme.hoverColor(),
                 5.0
             )
             hoverText.forEachIndexed { index, s ->
-                fontRenderer.renderScaledText(
+                fontRendererObj.renderScaledText(
                     s,
-                    hx.toFloat() + 5f,
-                    hy.toFloat() + 5 + index * fontRendererObj.FONT_HEIGHT + 1,
+                    xPos.toFloat() + 5f,
+                    hy.toFloat() + 5 + index * (fontRendererObj.FONT_HEIGHT + 1) * 2f,
                     theme.hoverTextColor(),
                     2f
                 )
@@ -80,10 +92,10 @@ object ConfigGui: GuiScreen() {
                 CategoryTab.scroll += s
             }
             2 -> {
-                openedCategory.scroll(s)
+                openedCategory.scroll(s, x, y)
             }
             else -> {
-                if (SearchBar.scrolled(s, x, y)) return
+                if (searchBar.scrolled(s, x, y)) return
             }
         }
     }
@@ -91,39 +103,38 @@ object ConfigGui: GuiScreen() {
     override fun mouseClicked(mouseX: Int, mouseY: Int, mouseButton: Int) {
         val mx = mouseX / scale
         val my = mouseY / scale
-        when (inArea(mx, my)) {
-            1 -> {
-                for (category in visibleCategoryRenderers) {
-                    if (category.hoveredTime != null) {
-                        if (SearchBar.searchInput.isEmpty()) {
-                            openedCategory = category
-                            searchCategory = false
-                        }
-                        else {
-                            openedCategory = if (searchCategory) category else SearchCategoryRenderer
-                            searchCategory = !searchCategory
-                        }
-                        break
-                    }
+        for (category in visibleCategoryRenderers) {
+            if (category.hoveredTime != null) {
+                if (searchBar.textInput.isEmpty()) {
+                    openedCategory = category
+                    searchCategory = false
                 }
-            }
-            2 -> {
-                openedCategory.mouseClicked(mx, my, mouseButton)
-            }
-            else -> {
-                if (SearchBar.mouseClicked(mx, my, mouseButton)) return
+                else {
+                    openedCategory = if (searchCategory) category else SearchCategoryRenderer
+                    searchCategory = !searchCategory
+                }
+                break
             }
         }
+        openedCategory.mouseClicked(mx, my, mouseButton)
+        searchBar.mouseClicked(mx, my, mouseButton)
     }
 
     override fun mouseReleased(mouseX: Int, mouseY: Int, state: Int) {
-        if (SearchBar.mouseReleased(mouseX / scale, mouseY / scale, state)) return
+        if (searchBar.mouseReleased() != InteractionFeedback.NONE) return
         openedCategory.mouseReleased(mouseX / scale, mouseY / scale, state)
     }
 
     override fun keyTyped(typedChar: Char, keyCode: Int) {
-        if (SearchBar.keyTyped(typedChar, keyCode)) return
-        if (openedCategory.keyTyped(typedChar, keyCode)) return
+        when (searchBar.keyTyped(typedChar, keyCode)) {
+            InteractionFeedback.OPENED -> {
+                openedCategory.closeSettings()
+                return
+            }
+            InteractionFeedback.CLOSED -> return
+            else -> {}
+        }
+        if (openedCategory.keyTyped(typedChar, keyCode) != InteractionFeedback.NONE) return
         super.keyTyped(typedChar, keyCode)
     }
 
@@ -133,7 +144,7 @@ object ConfigGui: GuiScreen() {
         }
         SearchCategoryRenderer.onInit()
 
-        if (SearchBar.searchInput.isEmpty()) {
+        if (searchBar.textInput.isEmpty()) {
             if (openedCategory.category.visibility == Visibility.VISIBLE || CategoryGeneral.devMode) return
             else openedCategory = visibleCategoryRenderers.first()
         }
@@ -154,6 +165,11 @@ object ConfigGui: GuiScreen() {
         openedCategory.onResize()
     }
 
+    fun onConfigReload() {
+        for (category in categoryRenderers) {
+            category.onConfigReload()
+        }
+    }
 
     override fun doesGuiPauseGame() = false
 
@@ -167,7 +183,7 @@ object ConfigGui: GuiScreen() {
     fun scaledMouseY() = (height - Mouse.getY() * height / mc.displayHeight - 1) / scale
 
     fun setHoveredText(vararg text: String) {
-        hoverText = text.toList()
+        hoverText = text.toList().flatMap { it.split("\n ") }
     }
 
     object CategoryTab {
@@ -254,5 +270,9 @@ object ConfigGui: GuiScreen() {
     object SearchCategoryRenderer: CategoryRenderer(Category("SEARCH")) {
         override val visibleValues: List<ValueRenderer>
             get() = visibleCategoryRenderers.flatMap { it.visibleValues } // Already filtered for search input
+    }
+
+    enum class InteractionFeedback {
+        NONE, INTERACTED, CLOSED, OPENED
     }
 }

@@ -1,5 +1,7 @@
 package diana.gui
 
+import diana.gui.ConfigGui.InteractionFeedback
+import diana.gui.GUIRenderUtils.fontRenderer
 import diana.gui.GUIRenderUtils.renderScaledText
 import org.apache.commons.lang3.CharUtils
 import org.lwjgl.input.Keyboard
@@ -7,20 +9,21 @@ import kotlin.math.roundToInt
 import kotlin.math.sign
 
 /** Too lazy to clear up :( - 2x **/
-object SearchBar {
-    const val allowScrolling = true
-    const val searchAutoFocus = true
-    const val borderThickness = 0.0
-    const val width = 300.0
-    const val height = 40.0
-    const val x = 1460.0 - width
-    const val y = 40.0
-    const val offsetSides = 10.0
-    const val cornerRadius = 10.0
-
+class TextInputField(
+    var x: Double,
+    var y: Double,
+    var width: Double,
+    var height: Double,
+    private val borderThickness: Double = 0.0,
+    private val offsetSides: Double = 10.0,
+    private val cornerRadius: Double = 10.0,
+    private val allowScrolling: Boolean = true,
+    private val searchAutoFocus: Boolean = true,
+    private val searchField: Boolean = false
+) {
     private val textScale
-        get() = (height - offsetSides * 2.0) / GUIRenderUtils.fontRenderer.FONT_HEIGHT
-    private var isFocused = false
+        get() = (height - offsetSides * 2.0) / fontRenderer.FONT_HEIGHT
+    var isFocused = false
 
     /**
      * The first value is the "cursor"
@@ -36,13 +39,13 @@ object SearchBar {
         }
     private val textMarkedSorted
         get() = minOf(textMarked.first, textMarked.last)..maxOf(textMarked.first, textMarked.last)
-    var searchInput = StringBuilder()
+    var textInput = StringBuilder()
         set(value) {
             field = value
             setSearchInputLengths()
         }
 
-    /** size = [searchInput].length + 1 */
+    /** size = [textInput].length + 1 */
     private var charLengths = listOf(0.0)
 
     /** Shifts the text to the left if > 0 */
@@ -51,12 +54,12 @@ object SearchBar {
     private var lastClickTime = 0L
     private var lastScroll = 0L
 
-    fun mouseClicked(mouseX: Double, mouseY: Double, mouseButton: Int): Boolean {
+    fun mouseClicked(mouseX: Double, mouseY: Double, mouseButton: Int): InteractionFeedback {
         if (isHovered(mouseX, mouseY)) {
             val cPos = cursorPosInField(mouseX)
             //Handle double-clicking
             if (System.currentTimeMillis() - lastClickTime <= 250 && cPos == textMarked.first && cPos == textMarked.last) {
-                textMarked = 0..searchInput.length
+                textMarked = 0..textInput.length // Maybe only on triple click and mark within " "..." " on double click, but not really needed
             } else {
                 isFocused = true
                 textMarked = cPos..cPos
@@ -64,62 +67,69 @@ object SearchBar {
                 dragging = true
             }
             lastClickTime = System.currentTimeMillis()
+            return InteractionFeedback.OPENED
         } else if (isFocused) {
             isFocused = false
+            return InteractionFeedback.CLOSED
         }
-        return true
+        return InteractionFeedback.NONE
     }
 
-    fun mouseReleased(mouseX: Double, mouseY: Double, state: Int): Boolean {
+    fun mouseReleased(): InteractionFeedback {
         if (dragging) {
             dragging = false
-            return true
+            return InteractionFeedback.CLOSED
         }
-        return false
+        return InteractionFeedback.NONE
     }
 
-    /** Uses return value for when [searchInput] has changed depending on [searchAutoFocus] or when search bar is opened or exited */
-    fun keyTyped(typedChar: Char, keyCode: Int): Boolean {
+    /** Uses return value for when [textInput] has changed depending on [searchAutoFocus] or when search bar is opened or exited */
+    fun keyTyped(typedChar: Char, keyCode: Int): InteractionFeedback {
         if (keyCode == Keyboard.KEY_F && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
-            textMarked = 0..0
-            isFocused = true
-            return true
+            if (!searchField) return InteractionFeedback.NONE
+            if (!isFocused) {
+                textMarked = textInput.length..textInput.length
+                isFocused = true
+                return InteractionFeedback.OPENED
+            } else {
+                return InteractionFeedback.INTERACTED
+            }
         } else if (isFocused) {
             when {
                 keyCode == Keyboard.KEY_ESCAPE -> {
                     textMarked = 0..0
                     isFocused = false
-                    return true
+                    return InteractionFeedback.CLOSED
                 }
 
                 keyCode == Keyboard.KEY_A && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) -> {
-                    textMarked = 0..searchInput.length
+                    textMarked = 0..textInput.length
                 }
 
                 keyCode == Keyboard.KEY_BACK -> {
                     if (textMarked.first != textMarked.last) {
                         val sortedMark = textMarkedSorted
-                        searchInput = StringBuilder(searchInput.removeRange(sortedMark.first..<sortedMark.last))
+                        textInput = StringBuilder(textInput.removeRange(sortedMark.first..<sortedMark.last))
                         textMarked = sortedMark.first..sortedMark.first
                     } else if (textMarked.first > 0) {
-                        searchInput.deleteCharAt(textMarked.first - 1)
+                        textInput.deleteCharAt(textMarked.first - 1)
                         setSearchInputLengths()
                         textMarked = textMarked.first - 1..<textMarked.last
-                    } else return false
-                    return searchAutoFocus
+                    } else return InteractionFeedback.NONE
+                    return if (searchAutoFocus) InteractionFeedback.INTERACTED else InteractionFeedback.NONE
                 }
 
                 keyCode == Keyboard.KEY_DELETE -> {
                     if (textMarked.first != textMarked.last) {
                         val sortedMark = textMarkedSorted
-                        searchInput = StringBuilder(searchInput.removeRange(sortedMark.first..<sortedMark.last))
+                        textInput = StringBuilder(textInput.removeRange(sortedMark.first..<sortedMark.last))
                         textMarked = sortedMark.first..sortedMark.first
-                    } else if (textMarked.first < searchInput.length) {
-                        searchInput.deleteCharAt(textMarked.first)
+                    } else if (textMarked.first < textInput.length) {
+                        textInput.deleteCharAt(textMarked.first)
                         setSearchInputLengths()
                         if (allowScrolling) scrollOffset = calculateScrollOffset(textMarked.first)
-                    } else return false
-                    return searchAutoFocus
+                    } else return InteractionFeedback.NONE
+                    return if (searchAutoFocus) InteractionFeedback.INTERACTED else InteractionFeedback.NONE
                 }
 
                 keyCode == Keyboard.KEY_LEFT -> {
@@ -134,10 +144,10 @@ object SearchBar {
 
                 keyCode == Keyboard.KEY_RIGHT -> {
                     if (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
-                        textMarked = textMarked.first..(textMarked.last + 1).coerceAtMost(searchInput.length)
+                        textMarked = textMarked.first..(textMarked.last + 1).coerceAtMost(textInput.length)
                     } else {
                         val inc = if (textMarked.first == textMarked.last) 1 else 0
-                        val c = (textMarkedSorted.last + inc).coerceAtMost(searchInput.length)
+                        val c = (textMarkedSorted.last + inc).coerceAtMost(textInput.length)
                         textMarked = c..c
                     }
                 }
@@ -152,90 +162,95 @@ object SearchBar {
                 keyCode == Keyboard.KEY_END -> {
                     textMarked =
                         if (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
-                            textMarkedSorted.first..searchInput.length
-                        else searchInput.length..searchInput.length
+                            textMarkedSorted.first..textInput.length
+                        else textInput.length..textInput.length
                 }
 
                 keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER -> {
-                    return true
+                    return InteractionFeedback.INTERACTED
                 }
 
                 CharUtils.isAsciiPrintable(typedChar) -> {
                     if (textMarked.first != textMarked.last) {
                         val sortedMark = textMarkedSorted
-                        searchInput = StringBuilder(
-                            searchInput.replaceRange(
+                        textInput = StringBuilder(
+                            textInput.replaceRange(
                                 sortedMark.first,
                                 sortedMark.last,
                                 typedChar.toString()
                             )
                         )
-                        textMarked = sortedMark.first..sortedMark.first
+                        textMarked = sortedMark.first + 1..sortedMark.first + 1
                     } else {
                         if (!allowScrolling) {
                             val newWidth = calculateScrollOffset(
                                 textMarked.first + 1,
                                 charLengths.plus(
-                                    GUIRenderUtils.fontRenderer.getStringWidth(typedChar.toString()) * textScale + charLengths.last()
+                                    fontRenderer.getStringWidth(typedChar.toString()) * textScale + charLengths.last()
                                 )
                             )
-                            if (newWidth >= 0) return false
+                            if (newWidth >= 0) return InteractionFeedback.NONE
                         }
-                        searchInput.insert(textMarked.first, typedChar)
+                        textInput.insert(textMarked.first, typedChar)
                         setSearchInputLengths()
                         textMarked = textMarked.first + 1..textMarked.first + 1
                     }
-                    return searchAutoFocus
+                    return if (searchAutoFocus) InteractionFeedback.INTERACTED else InteractionFeedback.NONE
                 }
             }
         }
-        return false
+        return InteractionFeedback.NONE
     }
 
     fun scrolled(dWheel: Int, mouseX: Double, mouseY: Double): Boolean {
-        if (!isHovered(mouseX, mouseY)) return false
+        if (!isHovered(mouseX, mouseY) || !isFocused) return false
         if (textMarked.first != textMarked.last) {
             val sortedMark = textMarkedSorted
-            val actual = (-dWheel).coerceIn(-sortedMark.first, searchInput.length - sortedMark.last)
+            val actual = (-dWheel).coerceIn(-sortedMark.first, textInput.length - sortedMark.last)
 
             if (actual == 0) return true
             textMarked = sortedMark.first + actual..sortedMark.last + actual
             if (allowScrolling) scrollOffset =
                 calculateScrollOffset(if (actual < 0) textMarked.first else textMarked.last)
         } else {
-            textMarked = (textMarked.first - dWheel).coerceIn(0, searchInput.length).let { it..it }
+            textMarked = (textMarked.first - dWheel).coerceIn(0, textInput.length).let { it..it }
         }
         return true
     }
 
 
-    fun drawScreen(mouseX: Double, mouseY: Double, partialTicks: Float, scale: Double, theme: Theme) { //Space width 4
+    fun drawScreen(mouseX: Double, mouseY: Double, scale: Double, theme: Theme, xPos: Double = x, yPos: Double = y, w: Double = width, h: Double = height, translatedPosX: Double = 0.0, translatedPosY: Double = 0.0) { //Space width 4
+        x = xPos
+        y = yPos
+        width = w
+        height = h
+
         //Render Search Field
-        GUIRenderUtils.renderRoundedRect(x, y, width, height, theme.searchBarBackground(), cornerRadius)
+        GUIRenderUtils.renderRoundedRect(x, y, width, height, theme.textFieldBackground(), cornerRadius)
         if (borderThickness != 0.0) {
-            GUIRenderUtils.renderRect(x, y, width, height, theme.searchBarBackground())
+            GUIRenderUtils.renderRect(x, y, width, height, theme.textFieldBackground())
             GUIRenderUtils.renderRectBorder(
                 x,
                 y,
                 width,
                 height,
                 borderThickness,
-                theme.searchBarBorder()
+                theme.textFieldBorder()
             )
         }
 
         //Setup Scissors for scrolling
-        GUIRenderUtils.setUpScissorAbsolute(
-            (x + offsetSides).roundToInt(),
-            y.roundToInt(),
-            (x + width - offsetSides).roundToInt(),
-            (y + height).roundToInt(),
+        GUIRenderUtils.setUpScissor(
+            (translatedPosX + x + offsetSides).roundToInt(),
+            (translatedPosY + y).roundToInt(),
+            (width - offsetSides).roundToInt(),
+            (height).roundToInt(),
             scale
         )
 
         if (isFocused) {
             //Render highlight or cursor - Space width between chars = 4
-            if (dragging && searchInput.isNotEmpty()) {
+            if (dragging && textInput.isNotEmpty()) {
                 //Set scrollOffset when mouse is out of bounds
                 val scrollingLeft = mouseX <= x + offsetSides
                 val scrollingRight = mouseX >= x + width - offsetSides
@@ -261,7 +276,7 @@ object SearchBar {
                         y + offsetSides,
                         char2 - char1,
                         height - offsetSides * 2,
-                        theme.searchBarTextMarkedColor()
+                        theme.textFieldTextMarkedColor()
                     )
                 }
                 renderSearchInput(theme)
@@ -273,7 +288,7 @@ object SearchBar {
                     y + offsetSides - 2,
                     1.0,
                     height - offsetSides * 2 + 2,
-                    theme.searchBarCursorColor()
+                    theme.textFieldCursorColor()
                 )
             }
         }
@@ -285,7 +300,7 @@ object SearchBar {
     }
 
     private fun renderSearchInput(theme: Theme) {
-        GUIRenderUtils.fontRenderer.renderScaledText(searchInput.toString(), (x + offsetSides - scrollOffset).toFloat(), (y + offsetSides).toFloat(), theme.searchBarTextColor(), textScale.toFloat())
+        fontRenderer.renderScaledText(textInput.toString(), (x + offsetSides - scrollOffset).toFloat(), (y + offsetSides).toFloat(), theme.textFieldTextColor(), textScale.toFloat())
     }
 
     /**
@@ -294,7 +309,7 @@ object SearchBar {
     private fun cursorPosInField(mouseX: Double): Int {
         if (charLengths.last() == 0.0) return 0
 
-        val relativeMouse = mouseX + scrollOffset - offsetSides * 2.0 - x
+        val relativeMouse = mouseX + scrollOffset - offsetSides - x
 
         if (relativeMouse >= charLengths.last()) {
             return charLengths.size - 1
@@ -308,9 +323,9 @@ object SearchBar {
     }
 
     private fun setSearchInputLengths() {
-        if (searchInput.isEmpty()) charLengths = listOf(0.0)
-        charLengths = listOf(0.0).plus(searchInput.mapIndexed { index, _ ->
-            GUIRenderUtils.fontRenderer.getStringWidth(searchInput.substring(0, index + 1)) * textScale
+        if (textInput.isEmpty()) charLengths = listOf(0.0)
+        charLengths = listOf(0.0).plus(textInput.mapIndexed { index, _ ->
+            fontRenderer.getStringWidth(textInput.substring(0, index + 1)) * textScale
         })
     }
 

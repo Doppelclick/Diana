@@ -18,20 +18,25 @@
 ## Diana burrow waypoints:
 
 ### Burrow Waypoints:
-+ Guesses burrow position based on ancestral spade particles, calculates an intercept using burrow arrow or last ancestral spade use (**Tip: Look up or down for more accuracy**)
++ Burrow guess 
+  - Based on ancestral spade particles
+  - Intercept using burrow arrow or last ancestral spade use (**Tip: Look up or down for more accuracy**)
 + Nearby burrow detection
-+ Inquisitor waypoints shared through party/all chat and/or Soopy's server - manageable ignore list - switch between receiving/sending from/to party/all chat
-+ Warp to the waypoint you are looking at using a keybind (controls menu) - travel destinations you have not unlocked yet will be blocked in the future, re-enable them using /diana enablewarp
++ Inquisitor waypoints: Chat or Soopy's server
+  - Manageable ignore list
+  - Switch between receiving/sending from/to party/all chat
++ Warp to the waypoint you are looking at using a keybind (controls menu)
+  - Travel destinations you have not unlocked yet will be blocked in the future, re-enable them using /diana enablewarp
 
 ### Command
 + **/diana**
   + help | Lists all commands
   + ignore [list, add [player], remove [player]] | View / (add / remove players from) your inquis ignore list
   + clear | Clear burrows
-  + reload | Reload config values from file
+  + config [reload, save, reset] | Manage config
   + enablewarp [name] | Enable a fast travel destination, supports tab completions
 
-- Config file: .minecraft\config\Diana.toml
+- Config file: .minecraft\config\Diana.cfg
 
 ### Contact:
 [![Discord](https://img.shields.io/badge/Discord-Doppelclick-blue?style=for-the-badge&logo=appveyor)](https://discord.com/channels/@me)

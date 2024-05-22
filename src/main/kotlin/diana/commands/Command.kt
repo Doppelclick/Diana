@@ -22,7 +22,7 @@ class Command : CommandBase() {
             " /diana help §7| This message§r\n" +
             " /diana ignore [list, add [player], remove [player]] §7| View / (add / remove players from) your inquis ignore list§r\n" +
             " /diana clear §7| Clear burrows§r\n" +
-            " /diana reload §7| Reload config values from file§r\n" +
+            " /diana config [reload, save, reset] §7| Manage config§r\n" +
             " /diana enablewarp [name] §7| Enable a fast travel destination, supports tab completions§r"
 
     override fun getCommandName(): String = "diana"
@@ -96,9 +96,30 @@ class Command : CommandBase() {
                 modMessage("Cleared Waypoints and found burrows.")
             }
 
-            "reload" -> {
-                Diana.configSystem.load()
-                modMessage("Reloaded config.")
+            "config" -> {
+                when (args.getOrNull(1)?.lowercase()) {
+                    "reload" -> {
+                        Diana.configSystem.reload()
+                        modMessage("Reloaded config.")
+                    }
+
+                    "save" -> {
+                        Diana.configSystem.storeAll()
+                        modMessage("Saved config.")
+                    }
+
+                    "reset" -> {
+                        Diana.configSystem.storeAll()
+                        for (category in Diana.configSystem.categories) {
+                            for (value in category.containedValues) {
+                                value.reset()
+                            }
+                        }
+                        modMessage("Reset config. Old config saved to file. If you want to retrieve it, run '/diana reload'.")
+                    }
+
+                    else -> modMessage("§cInvalid args!§r /diana config [reload, save, reset]")
+                }
             }
 
             "enablewarp" -> {
