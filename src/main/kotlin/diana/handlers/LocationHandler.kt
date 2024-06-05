@@ -159,11 +159,12 @@ object LocationHandler {
         Burrows.arrow = false
         Burrows.arrowStart = null
         Burrows.arrowDir = null
-        Burrows.selected = null
         Burrows.burrow = null
         Burrows.waypoints.clear()
         Burrows.foundBurrows.clear()
         Warp.lastwarp = "undefined"
+
+        BurrowSelector.selected = null
 
         Render.resetRender()
     }

@@ -41,7 +41,7 @@ object PacketHandler {
                                 Burrows.arrow = false
                             }
                         } else if (CategoryGeneral.proximity && !Burrows.foundBurrows.contains(down) && !Burrows.dugBurrows.contains(down)) {
-                            Burrows.waypoints.find { it.pos == down }?.takeIf { it is Waypoint.ParticleBurrowWaypoint }
+                            Burrows.waypoints.find { it.blockPos == down }?.takeIf { it is Waypoint.ParticleBurrowWaypoint }
                                 ?.let {
                                     (it as Waypoint.ParticleBurrowWaypoint).run {
                                         if (it.type == 3) it.setType(packet)

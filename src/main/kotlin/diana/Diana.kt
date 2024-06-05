@@ -9,6 +9,7 @@ import diana.handlers.*
 import diana.soopy.WebsiteConnection
 import kotlinx.coroutines.CoroutineScope
 import net.minecraft.client.Minecraft
+import net.minecraft.client.settings.KeyBinding
 import net.minecraft.util.ResourceLocation
 import net.minecraft.util.Vec3
 import net.minecraftforge.client.ClientCommandHandler
@@ -17,6 +18,7 @@ import net.minecraftforge.fml.client.registry.ClientRegistry
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
+import org.lwjgl.input.Keyboard
 import java.awt.Color
 import kotlin.coroutines.EmptyCoroutineContext
 
@@ -45,6 +47,9 @@ class Diana {
             Warp(Vec3(-76.0, 75.0, 80.0), "museum") { CategoryWarps.museum },
             Warp(Vec3(42.0, 121.0, 69.0), "wizard") { CategoryWarps.wizard }
         )
+        val keybindings = arrayOf(
+            KeyBinding("Warp to selected burrow", Keyboard.KEY_NONE, "Diana")
+        )
         var waypointStyles: Map<Int, Pair<String, Color>> = mapOf(
             1 to ("§aStart" to CategoryRender.startColor),
             2 to ("§cMob" to CategoryRender.mobColor),
@@ -64,17 +69,16 @@ class Diana {
         ClientCommandHandler.instance.registerCommand(Command())
         listOf(
             this,
+            BurrowSelector,
             EntityHandler,
-            Keybindings,
             LocationHandler,
-            PacketHandler,
             Render
         ).forEach(MinecraftForge.EVENT_BUS::register)
     }
 
     @Mod.EventHandler
     fun onInit(event: FMLInitializationEvent) {
-        Keybindings.keybindings.forEach { ClientRegistry.registerKeyBinding(it) }
+        keybindings.forEach { ClientRegistry.registerKeyBinding(it) }
         WebsiteConnection.onInit()
     }
 }

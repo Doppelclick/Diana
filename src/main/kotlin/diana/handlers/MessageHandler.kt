@@ -119,8 +119,9 @@ object MessageHandler {
                             Burrows.burrow = null
                         }
                     }
-                    if (Burrows.waypoints.removeIf { it.pos == pos }) {
+                    if (Burrows.waypoints.removeIf { it.blockPos == pos }) {
                         Burrows.foundBurrows.add(pos)
+                        BurrowSelector.warpNotification = false
                     }
                 }
                 Burrows.dugBurrows.clear()
@@ -146,8 +147,9 @@ object MessageHandler {
                             Burrows.burrow = null
                         }
                     }
-                    if (Burrows.waypoints.removeIf { it.pos == pos }) {
+                    if (Burrows.waypoints.removeIf { it.blockPos == pos }) {
                         Burrows.foundBurrows.add(pos)
+                        BurrowSelector.warpNotification = false
                     }
                 }
                 Burrows.dugBurrows.clear()

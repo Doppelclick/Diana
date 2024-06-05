@@ -41,16 +41,20 @@ object Utils {
 
     fun visualDistanceTo(burrow: Vec3, player: EntityPlayerSP): Double {
         val playerp = player.positionVector.addVector(0.0, player.getEyeHeight().toDouble(), 0.0)
-        var yaw = player.rotationYaw % 360
-        if (yaw < 0) yaw += 360f
+        val yaw = (player.rotationYaw % 360.0).positiveAngle()
         val pitch = player.rotationPitch
-        val lowery: Double = getYaw(playerp, burrow)
-        val highery: Double = getYaw(playerp, burrow.addVector(1.0, 1.0, 1.0))
-        val lowp: Double = getPitch(playerp, burrow.addVector(0.5, 1.0, 0.5))
-        val topp: Double = getPitch(playerp, Vec3(burrow.xCoord + 0.5, 255.0, burrow.zCoord + 0.5))
-        return if (lowery - 4 < yaw && yaw < highery + 4 && pitch < lowp + 4 && pitch > topp) {
-            (highery - yaw) * (lowp - pitch)
-        } else 129600.0
+
+        val burrowY: Double = getYaw(playerp, burrow.addVector(0.5, 0.5, 0.5)).positiveAngle()
+        val lowP: Double = getPitch(playerp, burrow.addVector(0.5, 1.0, 0.5))
+        val topP: Double = getPitch(playerp, Vec3(burrow.xCoord + 0.5, 255.0, burrow.zCoord + 0.5))
+
+        val yawDiff = (maxOf(yaw, burrowY) - minOf(yaw, burrowY)).let {
+            if (it < 180) it
+            else 360 - it
+        }
+        return if (yawDiff in 0.0..4.0 && pitch < lowP + 4 && pitch > topP) {
+            yawDiff * abs(lowP - pitch)
+        } else 16200.0
     }
 
     fun maxDistance(pos: Vec3, target: Vec3): Double = maxOf(
@@ -60,16 +64,18 @@ object Utils {
     )
 
     fun getYaw(playerPos: Vec3, point: Vec3): Double { //horizontal
-        var yaw = atan2(playerPos.xCoord - point.xCoord, point.zCoord - playerPos.zCoord) * 180 / Math.PI % 360
-        if (yaw < 0) yaw += 360.0
-        return yaw
+        return atan2(playerPos.xCoord - point.xCoord, point.zCoord - playerPos.zCoord) * 180 / Math.PI
     }
 
-    fun getPitch(playerPos: Vec3, point: Vec3): Double { //vertical
+    fun getPitch(playerPos: Vec3, point: Vec3): Double { //vertical, up is negative
         return atan2(
             playerPos.yCoord + 1 - point.yCoord,
             hypot(playerPos.xCoord - point.xCoord, playerPos.zCoord - point.zCoord)
-        ) * 180 / Math.PI % 360
+        ) * 180 / Math.PI
+    }
+
+    private fun Double.positiveAngle(): Double {
+        return if (this < 0) this + 360 else this
     }
 
     fun startTimerTask(delay: Long, action: () -> Unit) {

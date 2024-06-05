@@ -6,6 +6,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
 import diana.Diana.Companion.mc
 import diana.config.categories.CategoryGeneral
+import diana.handlers.BurrowSelector
 import diana.utils.Utils
 import net.minecraft.util.BlockPos
 import net.minecraft.util.ResourceLocation
@@ -40,15 +41,22 @@ object Burrows {
     var arrowDir: Vec3? = null
     var clicked: Long = 0L
 
-    var selected: Vec3? = null
-    var burrow: Vec3?
-        get() = interceptPos?.let { if (CategoryGeneral.interceptFullBlock) Vec3(BlockPos(it)) else it } ?: guessPos
+    var burrow: Waypoint?
+        get() = (if (CategoryGeneral.interceptFullBlock) roundedIntercept else interceptPos) ?: guessPos
         set(pos) {
             guessPos = pos
             interceptPos = pos
         }
-    var guessPos: Vec3? = null
-    var interceptPos: Vec3? = null
+    var guessPos: Waypoint? = null
+    var interceptPos: Waypoint? = null
+        set(value) {
+            field = value
+            roundedIntercept = value.let {
+                if (it != null) Waypoint(BlockPos(it))
+                else null
+            }
+        }
+    private var roundedIntercept: Waypoint? = null
     var lastDug: Int = 1
     var waypoints: ArrayList<Waypoint> = arrayListOf()
     var foundBurrows: ArrayList<BlockPos> = arrayListOf()
@@ -70,8 +78,8 @@ object Burrows {
         val z = lastSound.zCoord + changes.zCoord * distance
         val y = getHeight(round(x).toInt(), round(z).toInt()) ?: burrow?.yCoord ?: (lastSound.yCoord + changes.yCoord * distance)
 
-        guessPos = Vec3(x, y, z)
-        if (CategoryGeneral.notifications.contains(CategoryGeneral.MessageChoice.GUESS) && !echo) Utils.modMessage( //TODO: Fix !echo
+        guessPos = Waypoint(x, y, z)
+        if (CategoryGeneral.notifications.contains(CategoryGeneral.NotificationChoice.GUESS) && !echo) Utils.modMessage( // TODO: Fix !echo
             "[" + Math.round(x) + "," + Math.round(
                 guessPos!!.yCoord
             ) + "," + Math.round(z) + "] " + Math.round(distance).toInt()
@@ -84,6 +92,8 @@ object Burrows {
         }
 
         intercept()
+
+        BurrowSelector.sendWarpNotification()
     }
 
     private fun intercept() {
@@ -111,7 +121,7 @@ object Burrows {
                 return
             }
         }
-        interceptPos = intercept
+        interceptPos = Waypoint(intercept)
     }
 
     private fun getHeight(x: Int, z: Int) : Double? {

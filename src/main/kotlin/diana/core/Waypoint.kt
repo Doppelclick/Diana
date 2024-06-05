@@ -3,15 +3,33 @@ package diana.core
 import net.minecraft.network.play.server.S2APacketParticles
 import net.minecraft.util.BlockPos
 import net.minecraft.util.EnumParticleTypes
+import net.minecraft.util.Vec3
 
-abstract class Waypoint (
-    val pos: BlockPos
-) {
+open class Waypoint (
+    x: Double,
+    y: Double,
+    z: Double
+): Vec3(x, y, z) {
+    val blockPos = BlockPos(xCoord, yCoord, zCoord)
+    constructor(pos: Vec3) : this(pos.xCoord, pos.yCoord, pos.zCoord)
+    constructor(pos: BlockPos) : this(pos.x.toDouble(), pos.y.toDouble(), pos.z.toDouble())
+
+    override fun equals(other: Any?): Boolean {
+        return if (other is Waypoint) {
+            xCoord == other.xCoord && yCoord == other.yCoord && zCoord == other.zCoord
+        } else super.equals(other)
+    }
+
     class InquisWaypoint(
         pos: BlockPos,
-        var player: String,
-        var time: Long //possibly remove
-    ) : Waypoint(pos)
+        var player: String
+    ) : Waypoint(pos) {
+        override fun equals(other: Any?): Boolean {
+            return if (other is InquisWaypoint) {
+                xCoord == other.xCoord && yCoord == other.yCoord && zCoord == other.zCoord && player == other.player
+            } else super.equals(other)
+        }
+    }
 
     class ParticleBurrowWaypoint(
         pos: BlockPos,
@@ -46,6 +64,12 @@ abstract class Waypoint (
             } else if (particle == EnumParticleTypes.FOOTSTEP && count == 1 && speed == 0.0f && xOffset == 0.05f && yOffset == 0.0f && zOffset == 0.05f || particle == EnumParticleTypes.ENCHANTMENT_TABLE && count == 5 && speed == 0.05f && xOffset == 0.5f && yOffset == 0.4f && zOffset == 0.5f) {
                 type = 3
             }
+        }
+
+        override fun equals(other: Any?): Boolean {
+            return if (other is ParticleBurrowWaypoint) {
+                xCoord == other.xCoord && yCoord == other.yCoord && zCoord == other.zCoord && type == other.type
+            } else super.equals(other)
         }
     }
 }

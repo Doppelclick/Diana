@@ -6,6 +6,7 @@ import diana.config.categories.CategoryGeneral
 import diana.config.categories.CategoryInquisitor
 import diana.config.categories.CategoryWarps
 import diana.core.Burrows
+import diana.core.Waypoint
 import diana.gui.ConfigGui
 import diana.handlers.MessageHandler
 import diana.handlers.Render
@@ -180,21 +181,19 @@ class Command : CommandBase() {
                             }
                         }
                         else {
-                            Burrows.particles.forEach {
-                                Burrows.particles.forEachIndexed { indexB, base ->
-                                    Burrows.particles.forEachIndexed { indexO, other ->
-                                        if (indexO > maxOf(2, indexB) && other != base) {
-                                            Burrows.oldParticles.forEachIndexed { indexB2, base2 ->
-                                                Burrows.oldParticles.minus(base2).forEachIndexed { indexO2, other2 ->
-                                                    if (indexO2 > maxOf(2, indexB2) && other2 != base2) {
-                                                        val i = Utils.intercept(base, other, base2, other2)
-                                                        if (i != null) {
-                                                            val d = pos.distanceTo(i)
-                                                            if (d < distance) {
-                                                                distance = d
-                                                                pair1 = Pair(indexB, indexO)
-                                                                pair2 = Pair(indexB2, indexO2)
-                                                            }
+                            Burrows.particles.forEachIndexed { indexB, base ->
+                                Burrows.particles.forEachIndexed { indexO, other ->
+                                    if (indexO > maxOf(2, indexB) && other != base) {
+                                        Burrows.oldParticles.forEachIndexed { indexB2, base2 ->
+                                            Burrows.oldParticles.minus(base2).forEachIndexed { indexO2, other2 ->
+                                                if (indexO2 > maxOf(2, indexB2) && other2 != base2) {
+                                                    val i = Utils.intercept(base, other, base2, other2)
+                                                    if (i != null) {
+                                                        val d = pos.distanceTo(i)
+                                                        if (d < distance) {
+                                                            distance = d
+                                                            pair1 = Pair(indexB, indexO)
+                                                            pair2 = Pair(indexB2, indexO2)
                                                         }
                                                     }
                                                 }
@@ -211,7 +210,7 @@ class Command : CommandBase() {
                             val x: Int = args[2].toIntOrNull() ?: return
                             val y: Int = args[3].toIntOrNull() ?: return
                             val z: Int = args[4].toIntOrNull() ?: return
-                            Burrows.burrow = Vec3(
+                            Burrows.burrow = Waypoint(
                                 x.toDouble(),
                                 y.toDouble(),
                                 z.toDouble()

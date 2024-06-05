@@ -70,7 +70,7 @@ object EntityHandler {
     fun handleInquisWaypointReceived(pos: BlockPos, player: String, fromParty: Boolean = false) {
         if (player != mc.thePlayer.name && LocationHandler.doingDiana && LocationHandler.inHub && CategoryInquisitor.receiveMode != ChatChoice.NONE
             && (CategoryInquisitor.receiveMode == ChatChoice.ALL || fromParty || MessageHandler.partyMembers.contains(player)) && !CategoryInquisitor.getIgnoreList().contains(player.lowercase())) {
-            val waypoint = Waypoint.InquisWaypoint(pos, player, System.currentTimeMillis())
+            val waypoint = Waypoint.InquisWaypoint(pos, player)
             Burrows.waypoints.add(waypoint)
             Utils.startTimerTask(CategoryInquisitor.inqWaypointTimeout.toLong()) { Burrows.waypoints.remove(waypoint) }
             Utils.showClientTitle(

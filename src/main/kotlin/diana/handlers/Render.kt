@@ -4,18 +4,20 @@ import diana.Diana.Companion.mc
 import diana.Diana.Companion.waypointStyles
 import diana.config.categories.CategoryGeneral
 import diana.config.categories.CategoryRender
+import diana.config.categories.CategorySelector
 import diana.core.Burrows
 import diana.core.Burrows.burrow
-import diana.core.Burrows.selected
 import diana.core.Burrows.waypoints
 import diana.core.Waypoint
+import diana.handlers.BurrowSelector.isSelected
+import diana.handlers.BurrowSelector.selected
 import diana.utils.RenderUtils
 import diana.utils.Utils
-import net.minecraft.util.BlockPos
 import net.minecraft.util.Vec3
 import net.minecraftforge.client.event.RenderWorldLastEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import java.awt.Color
+import java.lang.ref.WeakReference
 
 object Render {
     private var lastBurrow: Vec3? = null
@@ -63,15 +65,17 @@ object Render {
             if (CategoryRender.interpolation) {
                 if (lastBurrow == null) lastBurrow = burrow
                 if (lastLastBurrow == null) lastLastBurrow = lastBurrow
-                guessPos = if (lastBurrow!!.distanceTo(lastLastBurrow!!) < 0.15) {
+                guessPos = if (lastBurrow!!.distanceTo(lastLastBurrow!!) < 0.3) {
                     burrow
                 } else {
                     val interpolationFactor =
-                        (Math.round((System.currentTimeMillis() - interpolation) * 100f) / 100f / (interpolation - lastInterpolation)).coerceIn(0f, 1f)
+                        (Math.round((System.currentTimeMillis() - interpolation).coerceAtMost(2000L) * 100f)
+                                / 100f / (interpolation - lastInterpolation).coerceAtMost(2000L)).coerceIn(0f, 1f) // Maybe change 2000L
                     Vec3(
                         lastLastBurrow!!.xCoord + (lastBurrow!!.xCoord - lastLastBurrow!!.xCoord) * interpolationFactor,
                         lastLastBurrow!!.yCoord + (lastBurrow!!.yCoord - lastLastBurrow!!.yCoord) * interpolationFactor,
-                        lastLastBurrow!!.zCoord + (lastBurrow!!.zCoord - lastLastBurrow!!.zCoord) * interpolationFactor)
+                        lastLastBurrow!!.zCoord + (lastBurrow!!.zCoord - lastLastBurrow!!.zCoord) * interpolationFactor
+                    )
                 }
                 if (lastBurrow != burrow) {
                     lastInterpolation = interpolation
@@ -82,29 +86,32 @@ object Render {
             } else guessPos = burrow!!
         }
 
-        if (lastCheck + 75 < System.currentTimeMillis()) { //TODO: possibly adjust timing
-            lastCheck = System.currentTimeMillis()
-            selected = waypoints.map { Vec3(it.pos) }.plus(
-                if (CategoryGeneral.guess && guessPos != null) listOf(guessPos)
-                else listOf()
-            ).minByOrNull {
-                Utils.visualDistanceTo(it, mc.thePlayer)
-            }?.takeIf {
-                Utils.visualDistanceTo(it, mc.thePlayer) < 129600 && it.distanceTo(mc.thePlayer.positionVector) > 15
-            }?.let {
-                if (it == guessPos) burrow else it
+        if (CategorySelector.selectionMode == CategorySelector.SelectionModeChoice.HOVER) {
+            if (lastCheck + 75 < System.currentTimeMillis()) {
+                lastCheck = System.currentTimeMillis()
+                selected =
+                    waypoints.plus(
+                        if (guessPos != null) listOf(Waypoint(guessPos))
+                        else listOf()
+                    ).minByOrNull {
+                        Utils.visualDistanceTo(it, mc.thePlayer)
+                    }?.takeIf {
+                        Utils.visualDistanceTo(it, mc.thePlayer) < 16200 && it.distanceTo(mc.thePlayer.positionVector) > 7
+                    }?.let {
+                        WeakReference(it)
+                    }
             }
-        }
 
-        if (selected != null) {
-            if (scaleTime == 0L) {
-                scaleTime = System.currentTimeMillis()
+            if (selected?.get() != null) {
+                if (scaleTime == 0L) {
+                    scaleTime = System.currentTimeMillis()
+                } else {
+                    scale = 1f + ((System.currentTimeMillis() - scaleTime).toFloat() / 250f).coerceIn(0f, 1f)
+                }
             } else {
-                scale = 1f + ((System.currentTimeMillis() - scaleTime).toFloat() / 250f).coerceIn(0f, 1f)
+                scale = 1f
+                scaleTime = 0
             }
-        } else {
-            scale = 1f
-            scaleTime = 0
         }
 
         if (CategoryGeneral.guess && guessPos != null) {
@@ -112,7 +119,7 @@ object Render {
                 RenderUtils.renderBeacon(
                     event.partialTicks,
                     "§l§bGuess " + waypointStyles[Burrows.lastDug]?.first + " (" + Burrows.lastDug + ")",
-                    if (burrow == selected) scale else 1f,
+                    if (burrow?.isSelected() == true) scale else 1f,
                     guessPos,
                     if (CategoryRender.guessSeparateColor) CategoryRender.guessColor else (waypointStyles[Burrows.lastDug]?.second ?: Color.BLACK),
                     1.0
@@ -122,23 +129,23 @@ object Render {
                 Utils.modMessage("Hnnngh wendewing ewwow :C Pwease send log")
             }
         }
-        waypoints.toSet().forEach {
+        waypoints.toSet().forEach { waypoint ->
             var display = ""
             var color = Color.BLACK
-            if (it is Waypoint.ParticleBurrowWaypoint && CategoryGeneral.proximity) {
-                display = waypointStyles[it.type]?.first + " (" + (if (it.type == 3) "2/" else "") + it.type + ")"
-                color = waypointStyles[it.type]?.second ?: Color.BLACK
-            } else if (it is Waypoint.InquisWaypoint) {
-                if (MessageHandler.partyMembers.contains(it.player)) display = "§9"
-                display = display + it.player + "§r's §6Inquisitor"
+            if (waypoint is Waypoint.ParticleBurrowWaypoint && CategoryGeneral.proximity) {
+                display = waypointStyles[waypoint.type]?.first + " (" + (if (waypoint.type == 3) "2/" else "") + waypoint.type + ")"
+                color = waypointStyles[waypoint.type]?.second ?: Color.BLACK
+            } else if (waypoint is Waypoint.InquisWaypoint) {
+                if (MessageHandler.partyMembers.contains(waypoint.player)) display = "§9"
+                display = display + waypoint.player + "§r's §6Inquisitor"
                 color = CategoryRender.inquisitorColor
             }
             try {
                 RenderUtils.renderBeacon(
                     event.partialTicks,
                     display,
-                    if (it.pos == selected?.let { BlockPos(it) }) scale else 1f,
-                    Vec3(it.pos),
+                    if (waypoint.isSelected()) scale else 1f,
+                    waypoint,
                     color
                 )
             } catch (e: Exception) {
