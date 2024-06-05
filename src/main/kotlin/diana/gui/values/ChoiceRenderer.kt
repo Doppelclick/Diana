@@ -24,10 +24,9 @@ class ChoiceRenderer(
 
     // Scroll
     private val minScroll = ((settingWidth - (choiceButtonTexts.values.fold(0.0) { acc, size -> acc + (size + OPTIONS_DIFF * 2.0) } + (hoverTimes.size - 1) * OPTIONS_BUTTON_SPACING)) / OPTIONS_SCROLL_AMOUNT)
-        .coerceAtMost(0.0)
     private var optionsScroll = 0.0
         set(value) {
-            field = value.coerceIn(minScroll, 0.0)
+            field = value.coerceIn(minScroll.coerceAtMost(0.0), 0.0)
         }
 
 
@@ -48,13 +47,13 @@ class ChoiceRenderer(
     override fun renderSetting(mouseX: Double, mouseY: Double, theme: Theme, scale: Double, translatedPosX: Double, translatedPosY: Double) {
         val selected = getValue().map { it.choiceName }
         val y = settingPosY + OPTIONS_Y
-        var x = settingPosX + optionsScroll * OPTIONS_SCROLL_AMOUNT
+        var x = settingPosX + (if (minScroll > 0.0) minScroll else optionsScroll) * OPTIONS_SCROLL_AMOUNT // If minScroll > 0.0 then the size of elements < settingSpace and should be aligned on the right
         val withinParams = mouseX in settingPosX..settingPosX + settingWidth && mouseY in y..y + OPTIONS_BUTTON_HEIGHT
 
         GUIRenderUtils.setUpScissor(
             (translatedPosX + settingPosX).roundToInt(),
             (translatedPosY + settingPosY).roundToInt(),
-            settingWidth.roundToInt(),
+            settingWidth.roundToInt() + 1,
             settingHeight.roundToInt(),
             scale
         )
@@ -104,8 +103,8 @@ class ChoiceRenderer(
         return ConfigGui.InteractionFeedback.NONE
     }
 
-    override fun settingScrolled(amount: Int, mouseX: Double, mouseY: Double): Boolean {
-        if (isSettingHovered(mouseX, mouseY)) {
+    override fun settingScrolled(amount: Int, mouseX: Double, mouseY: Double): Boolean { // TODO: Add indicator when the setting can be scrolled
+        if (minScroll != 0.0 && isSettingHovered(mouseX, mouseY)) {
             optionsScroll += amount
             return true
         }

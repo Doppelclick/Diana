@@ -42,8 +42,11 @@
 [![Discord](https://img.shields.io/badge/Discord-Doppelclick-blue?style=for-the-badge&logo=appveyor)](https://discord.com/channels/@me)
 + Message me: /msg user:558642345302687764 message:Hi!
 
+### TODO:
++ Improve burrow detection & rendering
+
 ### Credits:
-DungeonRooms (partly NEU), the calculation from Soopy and letting me use his server, the Packet Handling from Luna, proximity values from Skytils
+DungeonRooms (partly NEU), the calculation from Soopy and letting me use his server, the Packet Handling from Luna, proximity values from Skytils, Config from LiquidBounce
 
 ### Download:
 <p>

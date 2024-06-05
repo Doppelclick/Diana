@@ -36,7 +36,7 @@ open class ValueRenderer(
         GUIRenderUtils.renderRoundedRect(0.0, 0.0, width, CategoryRenderer.BUTTON_HEIGHT.toDouble(), theme.categoryButtonColor(), 10.0)
         GUIRenderUtils.fontRenderer.renderScaledText(value.name, 8f, 7f, theme.valueNameColor(), 2f)
 
-        var desc = value.description
+        var desc = value.printableDescription
         var len = GUIRenderUtils.fontRenderer.getStringWidth(desc) * 1.5f
         if (len > textWidth) {
             len += GUIRenderUtils.fontRenderer.getStringWidth("...") * 1.5f

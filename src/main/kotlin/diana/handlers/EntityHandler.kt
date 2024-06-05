@@ -48,7 +48,7 @@ object EntityHandler {
         val player = mc.thePlayer ?: return
         if (event.action == PlayerInteractEvent.Action.RIGHT_CLICK_AIR && CategoryGeneral.guess) {
             if (System.currentTimeMillis() > Burrows.clicked + 3000) {
-                if (player.heldItem?.getDisplayName()?.contains("Ancestral Spade") == true) {
+                if (player.heldItem?.displayName?.contains("Ancestral Spade") == true) {
                     Burrows.oldParticles = Burrows.particles
                     Burrows.resetBurrow()
                     Burrows.echo = true
@@ -80,7 +80,7 @@ object EntityHandler {
             Utils.ping()
             val ignore = ChatComponentText("§c [Ignore this player] ")
             ignore.setChatStyle(
-                ignore.getChatStyle().setChatClickEvent(
+                ignore.chatStyle.setChatClickEvent(
                     ClickEvent(
                         ClickEvent.Action.RUN_COMMAND,
                         "/diana ignore add $player"

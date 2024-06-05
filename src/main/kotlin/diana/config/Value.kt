@@ -3,6 +3,7 @@ package diana.config
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
+import diana.config.categories.CategoryGeneral
 import diana.config.json.Exclude
 import java.awt.Color
 import java.util.*
@@ -21,7 +22,6 @@ open class Value<T : Any>(
     @SerializedName("name") open val name: String,
     @SerializedName("value") internal var value: T,
     @Exclude val valueType: ValueType,
-    @Exclude var description: String = "",
     @Exclude internal var visibility: Visibility = Visibility.VISIBLE,
     @Exclude internal val default: T = value
 ) {
@@ -31,6 +31,14 @@ open class Value<T : Any>(
     private val listeners = mutableListOf<ValueListener<T>>()
     @Exclude
     val dependencies = mutableListOf<() -> Boolean>()
+    @Exclude
+    var description: String = ""
+        set(value) {
+            field = value
+            printableDescription = field.replace("\n ", " ")
+        }
+    @Exclude /** Description without formatting codes **/
+    var printableDescription = ""
 
     open fun set(t: T): Boolean { // temporary set value
         // Do nothing if value is the same
@@ -94,6 +102,11 @@ open class Value<T : Any>(
     fun dependsOn(predicate: () -> Boolean): Value<T> {
         dependencies.add(predicate)
         return this
+    }
+
+    open fun notHidden(): Boolean {
+        return visibility.let { it == Visibility.VISIBLE || it == Visibility.DEV && CategoryGeneral.devMode }
+                && dependencies.all { it() }
     }
 
     @Suppress("UNCHECKED_CAST")

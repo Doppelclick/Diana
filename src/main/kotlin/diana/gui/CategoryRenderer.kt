@@ -1,8 +1,6 @@
 package diana.gui
 
 import diana.config.Category
-import diana.config.Visibility
-import diana.config.categories.CategoryGeneral
 import diana.gui.ConfigGui.InteractionFeedback
 import diana.gui.ValueRenderer.Companion.getRenderer
 import net.minecraft.client.renderer.GlStateManager
@@ -13,9 +11,9 @@ open class CategoryRenderer(
 ) {
     open val values = category.containedValues.map { it.getRenderer() }
     open val visibleValues
-        get() = values.filter { it.value.visibility.let { it == Visibility.VISIBLE || it == Visibility.DEV && CategoryGeneral.devMode } }.let {
+        get() = values.filter { it.value.notHidden() }.let {
             if (ConfigGui.searchBar.textInput.isNotEmpty())
-                it.filter {  it.value.let { it.name.contains(ConfigGui.searchBar.textInput, true) || it.description.contains(ConfigGui.searchBar.textInput, true) } }
+                it.filter { it.value.let { it.name.contains(ConfigGui.searchBar.textInput, true) || it.printableDescription.contains(ConfigGui.searchBar.textInput, true) } }
             else it
         }
     var hoveredTime: Long? = null

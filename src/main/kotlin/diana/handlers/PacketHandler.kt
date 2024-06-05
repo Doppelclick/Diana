@@ -4,37 +4,34 @@ import diana.Diana.Companion.mc
 import diana.config.categories.CategoryGeneral
 import diana.core.Burrows
 import diana.core.Waypoint
-import diana.events.PacketEvent
 import diana.utils.Utils
 import net.minecraft.init.Blocks
+import net.minecraft.network.Packet
 import net.minecraft.network.play.client.C07PacketPlayerDigging
 import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement
 import net.minecraft.network.play.server.*
 import net.minecraft.util.BlockPos
 import net.minecraft.util.EnumParticleTypes
 import net.minecraft.util.Vec3
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 
 object PacketHandler {
-    @SubscribeEvent
-    fun onInboundPacket(event: PacketEvent.Inbound) {
+    fun onInboundPacket(packet: Packet<*>) {
         if (!CategoryGeneral.modToggled) return
-        when (event.packet) {
-            is S02PacketChat -> MessageHandler.onChatmessage(event.packet)
-            is S3EPacketTeams -> LocationHandler.onScoreboard(event.packet)
-            is S38PacketPlayerListItem -> LocationHandler.TabList.handlePacket(event.packet)
+        when (packet) {
+            is S02PacketChat -> MessageHandler.onChatmessage(packet)
+            is S3EPacketTeams -> LocationHandler.onScoreboard(packet)
+            is S38PacketPlayerListItem -> LocationHandler.TabList.handlePacket(packet)
             else -> {
                 if (!LocationHandler.doingDiana) return
-                when (event.packet) {
+                when (packet) {
                     is S2APacketParticles -> {
-                        val particle = event.packet
-                        val pos = Vec3(particle.xCoordinate, particle.yCoordinate, particle.zCoordinate)
+                        val pos = Vec3(packet.xCoordinate, packet.yCoordinate, packet.zCoordinate)
                         val down = BlockPos(pos).down()
-                        if (particle.particleType == EnumParticleTypes.FIREWORKS_SPARK && particle.particleSpeed == 0f && particle.particleCount == 1
-                            && Burrows.echo && CategoryGeneral.guess && particle.xOffset == 0f && particle.yOffset == 0f && particle.zOffset == 0f) {
+                        if (packet.particleType == EnumParticleTypes.FIREWORKS_SPARK && packet.particleSpeed == 0f && packet.particleCount == 1
+                            && Burrows.echo && CategoryGeneral.guess && packet.xOffset == 0f && packet.yOffset == 0f && packet.zOffset == 0f) {
                             Burrows.particles.add(pos)
                             Burrows.calcBurrow()
-                        } else if (particle.particleType == EnumParticleTypes.REDSTONE && particle.particleSpeed == 1f && particle.particleCount == 0 && Burrows.arrow && CategoryGeneral.guess) {
+                        } else if (packet.particleType == EnumParticleTypes.REDSTONE && packet.particleSpeed == 1f && packet.particleCount == 0 && Burrows.arrow && CategoryGeneral.guess) {
                             if (Burrows.arrowStart == null) {
                                 Burrows.arrowStart = pos
                             } else if (Burrows.arrowDir == null) {
@@ -47,11 +44,11 @@ object PacketHandler {
                             Burrows.waypoints.find { it.pos == down }?.takeIf { it is Waypoint.ParticleBurrowWaypoint }
                                 ?.let {
                                     (it as Waypoint.ParticleBurrowWaypoint).run {
-                                        if (it.type == 3) it.setType(particle)
+                                        if (it.type == 3) it.setType(packet)
                                     }
                                 } ?: run {
                                 Burrows.waypoints.add(
-                                    Waypoint.ParticleBurrowWaypoint(down).apply { this.setType(particle) }.apply {
+                                    Waypoint.ParticleBurrowWaypoint(down).apply { this.setType(packet) }.apply {
                                         if (this.type == -1) return
                                         Utils.playSound(
                                             "note.pling",
@@ -65,12 +62,12 @@ object PacketHandler {
                     }
 
                     is S29PacketSoundEffect -> {
-                        if (CategoryGeneral.guess && event.packet.soundName == "note.harp" && Burrows.echo) {
+                        if (CategoryGeneral.guess && packet.soundName == "note.harp" && Burrows.echo) {
                             Burrows.sounds[Vec3(
-                                event.packet.x,
-                                event.packet.y,
-                                event.packet.z
-                            )] = event.packet.pitch
+                                packet.x,
+                                packet.y,
+                                packet.z
+                            )] = packet.pitch
                         }
                     }
                 }
@@ -78,20 +75,19 @@ object PacketHandler {
         }
     }
 
-    @SubscribeEvent
-    fun onOutboundPacket(event: PacketEvent.Outbound) {
+    fun onOutboundPacket(packet: Packet<*>) {
         if (!CategoryGeneral.modToggled || !LocationHandler.doingDiana || mc.thePlayer?.heldItem == null) return
         if (mc.thePlayer.heldItem.displayName.contains("Ancestral Spade")) {
-            when (event.packet) {
+            when (packet) {
                 is C07PacketPlayerDigging -> {
-                    if (event.packet.status == C07PacketPlayerDigging.Action.START_DESTROY_BLOCK && mc.theWorld?.getBlockState(event.packet.position)?.block == Blocks.grass) {
-                        Burrows.dugBurrows.add(event.packet.position)
+                    if (packet.status == C07PacketPlayerDigging.Action.START_DESTROY_BLOCK && mc.theWorld?.getBlockState(packet.position)?.block == Blocks.grass) {
+                        Burrows.dugBurrows.add(packet.position)
                     }
                 }
 
                 is C08PacketPlayerBlockPlacement -> {
-                    if (event.packet.position != BlockPos(-1, -1, -1) && mc.theWorld?.getBlockState(event.packet.position)?.block == Blocks.grass) {
-                        Burrows.dugBurrows.add(event.packet.position)
+                    if (packet.position != BlockPos(-1, -1, -1) && mc.theWorld?.getBlockState(packet.position)?.block == Blocks.grass) {
+                        Burrows.dugBurrows.add(packet.position)
                     }
                 }
             }

@@ -24,9 +24,9 @@ object CategoryGeneral : Category("General") {
     var accuracyChecks by boolean("Accuracy Checks", true).dev()
     var guessTolerance by float("Guess Tolerance", 5f, 0f..100f).dev().apply { description = "Tolerance for intercept calculation to prevent 'flickering'." }
     var proximity by boolean("Proximity detection", true).apply { description = "Detects nearby burrows." }
-    var notifications by multiChoice("Notifications", MultiChooseList(), MessageChoice.entries.toMultiChooseList())
+    var notifications by multiChoice("Notifications", MultiChooseList(), NotificationChoice.entries.toMultiChooseList())
 
-    enum class MessageChoice(override val choiceName: String, override val description: String? = null): NamedChoice {
+    enum class NotificationChoice(override val choiceName: String, override val description: String? = null): NamedChoice {
         WARP("Warp available"), GUESS("Guess located"), WARPED("Warp completed")
     }
 }

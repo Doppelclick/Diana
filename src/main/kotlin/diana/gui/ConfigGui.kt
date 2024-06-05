@@ -17,15 +17,15 @@ object ConfigGui: GuiScreen() {
     private val categoryRenderers = configSystem.categories.map { CategoryRenderer(it) }
     val visibleCategoryRenderers: List<CategoryRenderer>
         get() {
-            return categoryRenderers.filter { it.category.visibility.let { it == Visibility.VISIBLE || it == Visibility.DEV && CategoryGeneral.devMode } }
+            return categoryRenderers.filter { it.category.notHidden() }
         }
     private var openedCategory: CategoryRenderer = visibleCategoryRenderers.first()
+    private var lastCategory = openedCategory
     private var scale = 1.0
     var scaledHeight = 900.0
     private val theme
         get() = CategoryGeneral.theme.themeClass
     private var hoverText: List<String> = listOf()
-    private var searchCategory = false
     val searchBar = TextInputField(1460.0 - 300.0, 40.0, 300.0, 40.0, searchField = true)
 
     override fun drawScreen(mouseX: Int, mouseY: Int, partialTicks: Float) {
@@ -103,21 +103,26 @@ object ConfigGui: GuiScreen() {
     override fun mouseClicked(mouseX: Int, mouseY: Int, mouseButton: Int) {
         val mx = mouseX / scale
         val my = mouseY / scale
+
+        openedCategory.mouseClicked(mx, my, mouseButton)
+
         for (category in visibleCategoryRenderers) {
             if (category.hoveredTime != null) {
-                if (searchBar.textInput.isEmpty()) {
-                    openedCategory = category
-                    searchCategory = false
-                }
-                else {
-                    openedCategory = if (searchCategory) category else SearchCategoryRenderer
-                    searchCategory = !searchCategory
-                }
-                break
+                openedCategory =
+                    if (searchBar.textInput.isEmpty() &&! searchBar.isFocused) {
+                        lastCategory = category
+                        category
+                    } else {
+                        if (openedCategory != category) category else SearchCategoryRenderer.apply {
+                            lastCategory = openedCategory
+                        }
+                    }
+                return // Prevent search bar from closing
             }
         }
-        openedCategory.mouseClicked(mx, my, mouseButton)
-        searchBar.mouseClicked(mx, my, mouseButton)
+        if (searchBar.mouseClicked(mx, my, mouseButton) == InteractionFeedback.CLOSED && searchBar.textInput.isEmpty()) {
+            if (openedCategory == SearchCategoryRenderer) openedCategory = lastCategory
+        }
     }
 
     override fun mouseReleased(mouseX: Int, mouseY: Int, state: Int) {
@@ -131,7 +136,10 @@ object ConfigGui: GuiScreen() {
                 openedCategory.closeSettings()
                 return
             }
-            InteractionFeedback.CLOSED -> return
+            InteractionFeedback.CLOSED -> {
+                if (openedCategory == SearchCategoryRenderer && searchBar.textInput.isEmpty()) openedCategory = lastCategory
+                return
+            }
             else -> {}
         }
         if (openedCategory.keyTyped(typedChar, keyCode) != InteractionFeedback.NONE) return
@@ -145,8 +153,8 @@ object ConfigGui: GuiScreen() {
         SearchCategoryRenderer.onInit()
 
         if (searchBar.textInput.isEmpty()) {
-            if (openedCategory.category.visibility == Visibility.VISIBLE || CategoryGeneral.devMode) return
-            else openedCategory = visibleCategoryRenderers.first()
+            if (!openedCategory.category.notHidden())
+                openedCategory = lastCategory
         }
     }
 
