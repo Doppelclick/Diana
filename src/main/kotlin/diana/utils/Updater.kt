@@ -2,7 +2,7 @@ package diana.utils
 
 import diana.Diana
 import com.google.gson.JsonParser
-import diana.config.categories.CategoryGeneral
+import diana.config.categories.CategoryGeneral.updateCheckBeta
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.minecraft.event.ClickEvent
@@ -15,24 +15,27 @@ import java.net.URL
 
 class Updater {
     private val releaseURL = "https://github.com/Doppelclick/Diana/releases/tag/"
-    private val apiURL
-        get() = "https://api.github.com/repos/Doppelclick/Diana/releases" + if (!CategoryGeneral.updateCheckBeta) "/latest" else ""
     private var lastCheck: Long = 0L
+    private var checkedBeta = false
 
-    fun check() {
-        if (System.currentTimeMillis() + 60000 < lastCheck) return
+    private fun apiURL(beta: Boolean) = "https://api.github.com/repos/Doppelclick/Diana/releases" + if (!beta) "/latest" else ""
+
+    fun check(beta: Boolean = updateCheckBeta) {
+        if (System.currentTimeMillis() < lastCheck + 60000 && (!beta || checkedBeta)) return
         lastCheck = System.currentTimeMillis()
+        checkedBeta = beta
+
         Diana.scope.launch {
             while (Diana.mc.thePlayer == null) {
                 delay(100)
             }
             delay(1000)
             try {
-                val request = URL(apiURL).openConnection()
+                val request = URL(apiURL(beta)).openConnection()
                 request.connect()
                 val json = JsonParser()
                 val latestRelease =
-                    if (CategoryGeneral.updateCheckBeta) json.parse(InputStreamReader(request.getContent() as InputStream)).asJsonArray.get(0).asJsonObject
+                    if (beta) json.parse(InputStreamReader(request.getContent() as InputStream)).asJsonArray.get(0).asJsonObject
                     else json.parse(InputStreamReader(request.getContent() as InputStream)).getAsJsonObject()
                 val latestTag = latestRelease["tag_name"].asString
                 val currentVersion = DefaultArtifactVersion(Diana.version)

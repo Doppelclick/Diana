@@ -1,12 +1,12 @@
 package diana.handlers
 
 import com.google.common.collect.ComparisonChain
+import diana.Diana
 import diana.Diana.Companion.mc
 import diana.config.categories.CategoryDebug
 import diana.core.Burrows
 import diana.core.Warp
 import diana.soopy.SoopyV2Server
-import diana.utils.Updater
 import net.minecraft.client.network.NetworkPlayerInfo
 import net.minecraft.network.play.server.S38PacketPlayerListItem
 import net.minecraft.network.play.server.S3EPacketTeams
@@ -38,7 +38,7 @@ object LocationHandler {
         mc.currentServerData?.run {
             if (this.serverIP.lowercase().contains("hypixel.")) {
                 onHypixel = true
-                Updater().check()
+                Diana.updater.check()
             }
         }
     }

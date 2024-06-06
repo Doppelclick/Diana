@@ -1,5 +1,6 @@
 package diana.config.categories
 
+import diana.Diana.Companion.updater
 import diana.config.Category
 import diana.config.MultiChooseList
 import diana.config.NamedChoice
@@ -17,7 +18,10 @@ object CategoryGeneral : Category("General") {
     }
     var theme by choice("Theme", ThemeChoice.DEFAULT, ThemeChoice.entries.toTypedArray()).hidden()
     var devMode by boolean("Dev Mode", false).hidden().doNotInclude()
-    var updateCheckBeta by boolean("Check Beta Versions", true).apply { description = "Also check for beta versions when checking for updates." }
+    var updateCheckBeta by boolean("Check Beta Versions", true).apply { description = "Also check for beta versions when checking for updates." }.listen { // TODO: Fix not triggering
+        if (it) updater.check(true)
+        it
+    }
     var guess by boolean("Guess", true).apply { description = "Whether the mod should guess the location of the burrow." }
     var calculateIntercept by boolean("Intercept", true).apply { description = "Whether the mod should calculate an intercept as the burrow guess." }
     var interceptFullBlock by boolean("Intercept as full block", true).apply { description = "This will draw the burrow calculated with the intercept on a full block." }

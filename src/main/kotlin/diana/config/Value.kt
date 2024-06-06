@@ -5,6 +5,7 @@ import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
 import diana.config.categories.CategoryGeneral
 import diana.config.json.Exclude
+import diana.utils.Utils
 import java.awt.Color
 import java.util.*
 import java.util.function.Predicate
@@ -175,7 +176,7 @@ class ChooseListValue<T: NamedChoice>(
     }
 
     override fun setByString(string: String) {
-        this.value = choices.first { it.choiceName == string }
+        set(choices.first { it.choiceName == string })
     }
 }
 
@@ -225,30 +226,30 @@ class MultiChooseList<T> : ArrayList<T> {
 
     override fun add(element: T): Boolean {
         val re = super.add(element)
-        runCatching { listListeners?.invoke(this) }
+        listListeners?.runCatching { invoke(this@MultiChooseList) }
         return re
     }
 
     override fun add(index: Int, element: T) {
         super.add(element)
-        runCatching { listListeners?.invoke(this) }
+        listListeners?.runCatching { invoke(this@MultiChooseList) }
     }
 
     override fun remove(element: T): Boolean {
         val re = super.remove(element)
-        runCatching { listListeners?.invoke(this) }
+        listListeners?.runCatching { invoke(this@MultiChooseList) }
         return re
     }
 
     override fun removeAt(index: Int): T {
         val re = super.removeAt(index)
-        runCatching { listListeners?.invoke(this) }
+        listListeners?.runCatching { invoke(this@MultiChooseList) }
         return re
     }
 
     override fun removeIf(filter: Predicate<in T>): Boolean {
         val re = super.removeIf(filter)
-        runCatching { listListeners?.invoke(this) }
+        listListeners?.runCatching { invoke(this@MultiChooseList) }
         return re
     }
 }

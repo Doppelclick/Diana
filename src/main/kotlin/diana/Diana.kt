@@ -7,6 +7,7 @@ import diana.config.categories.CategoryWarps
 import diana.core.Warp
 import diana.handlers.*
 import diana.soopy.WebsiteConnection
+import diana.utils.Updater
 import kotlinx.coroutines.CoroutineScope
 import net.minecraft.client.Minecraft
 import net.minecraft.client.settings.KeyBinding
@@ -38,6 +39,7 @@ class Diana {
         val mc = Minecraft.getMinecraft()
         val icon = ResourceLocation("diana", "griffin.png")
         val configSystem = ConfigSystem()
+        val updater = Updater()
         val scope = CoroutineScope(EmptyCoroutineContext)
         val warps = arrayOf(
             Warp(Vec3(-3.0, 69.0, -70.0), "hub") { true },

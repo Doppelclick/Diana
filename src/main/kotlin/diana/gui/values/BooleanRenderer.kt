@@ -24,7 +24,7 @@ class BooleanRenderer(
 
     override fun settingClicked(mouseX: Double, mouseY: Double, mouseButton: Int): InteractionFeedback {
         if (isSettingHovered(mouseX, mouseY)) {
-            value.value = !value.value
+            value.set(!value.value)
             return InteractionFeedback.INTERACTED
         }
         return InteractionFeedback.NONE
