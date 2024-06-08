@@ -28,9 +28,9 @@ object BurrowSelector {
                         Burrows.burrow
                     }
             } ?: return null
-            val warp = Warp.closest(loc) ?: return null
-            if (warp.pos.distanceTo(loc) * 1.1 < Diana.mc.thePlayer.positionVector.distanceTo(loc)) {
-                return warp
+            val warp = Warp.closest(loc)
+            if (warp.second * 1.1 < Diana.mc.thePlayer.positionVector.distanceTo(loc)) {
+                return warp.first
             }
             return null
         }

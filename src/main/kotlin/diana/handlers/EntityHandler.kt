@@ -35,7 +35,7 @@ object EntityHandler {
                 }
 
                 if (CategoryInquisitor.inqMode.contains(InqModeChoice.CHAT)) {
-                    val warp = Warp.closest(entity.positionVector, false)?.name ?: "nothing"
+                    val warp = Warp.closest(entity.positionVector, false).first.name
                     player.sendChatMessage(("/" + (if (CategoryInquisitor.sendMode == ChatChoice.ALL) "a" else "p") + "c [Diana] Inquis! [" + pos.x + "," + pos.y + "," + pos.z + "] at ⏣ " + LocationHandler.location) + " warp: " + warp)
                 }
             }
@@ -75,7 +75,7 @@ object EntityHandler {
             Utils.startTimerTask(CategoryInquisitor.inqWaypointTimeout.toLong()) { Burrows.waypoints.remove(waypoint) }
             Utils.showClientTitle(
                 "",
-                "§c" + player + " 's Inquis near " + Warp.closest(Vec3(pos))?.name
+                "§c" + player + " 's Inquis near " + Warp.closest(Vec3(pos)).first.name
             )
             Utils.ping()
             val ignore = ChatComponentText("§c [Ignore this player] ")

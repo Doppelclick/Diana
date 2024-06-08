@@ -11,7 +11,6 @@ import diana.utils.Updater
 import kotlinx.coroutines.CoroutineScope
 import net.minecraft.client.Minecraft
 import net.minecraft.util.ResourceLocation
-import net.minecraft.util.Vec3
 import net.minecraftforge.client.ClientCommandHandler
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.fml.common.Mod
@@ -39,12 +38,12 @@ class Diana {
         val updater = Updater()
         val scope = CoroutineScope(EmptyCoroutineContext)
         val warps = arrayOf(
-            Warp(Vec3(-3.0, 69.0, -70.0), "hub") { true },
-            Warp(Vec3(-250.0, 129.0, -45.0), "castle") { CategoryWarps.castle },
-            Warp(Vec3(-162.0, 61.0, -99.0), "crypt") { CategoryWarps.crypt },
-            Warp(Vec3(91.0, 74.0, 173.0), "da") { CategoryWarps.da },
-            Warp(Vec3(-76.0, 75.0, 80.0), "museum") { CategoryWarps.museum },
-            Warp(Vec3(42.0, 121.0, 69.0), "wizard") { CategoryWarps.wizard }
+            Warp(-3.0, 69.0, -70.0, "hub") { true },
+            Warp(-250.0, 129.0, -45.0, "castle") { CategoryWarps.castle },
+            Warp(-162.0, 61.0, -99.0, "crypt", 17.0) { CategoryWarps.crypt },
+            Warp(91.0, 74.0, 173.0, "da", 5.0) { CategoryWarps.da },
+            Warp(-76.0, 75.0, 80.0, "museum") { CategoryWarps.museum },
+            Warp(42.0, 121.0, 69.0, "wizard") { CategoryWarps.wizard }
         )
         var waypointStyles: Map<Int, Pair<String, Color>> = mapOf(
             1 to ("§aStart" to CategoryRender.startColor),
