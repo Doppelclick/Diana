@@ -38,15 +38,16 @@ object BurrowSelector {
     fun sendWarpNotification() {
         if (warpNotification || !CategoryGeneral.notifications.contains(CategoryGeneral.NotificationChoice.WARP)) return
         if (currentWarp != null) {
+            warpNotification = true
             Utils.showClientTitle(null, "Warp Available!")
         }
     }
 
 
     @SubscribeEvent
-    fun onKey(event: InputEvent.KeyInputEvent) {
+    fun onTick(event: InputEvent) {
         if (!CategoryGeneral.modToggled || !LocationHandler.doingDiana || Diana.mc.thePlayer == null) return
-        if (Diana.keybindings[0].isPressed) {
+        if (CategorySelector.warpKeyBinding.mcKeyBinding.isPressed) {
             currentWarp?.warpTo()
         }
     }

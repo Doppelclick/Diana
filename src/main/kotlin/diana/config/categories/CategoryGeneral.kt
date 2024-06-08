@@ -18,7 +18,7 @@ object CategoryGeneral : Category("General") {
     }
     var theme by choice("Theme", ThemeChoice.DEFAULT, ThemeChoice.entries.toTypedArray()).hidden()
     var devMode by boolean("Dev Mode", false).hidden().doNotInclude()
-    var updateCheckBeta by boolean("Check Beta Versions", true).apply { description = "Also check for beta versions when checking for updates." }.listen { // TODO: Fix not triggering
+    var updateCheckBeta by boolean("Check Beta Versions", true).apply { description = "Also check for beta versions when checking for updates." }.listen {
         if (it) updater.check(true)
         it
     }

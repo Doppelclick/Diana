@@ -3,13 +3,15 @@ package diana.config
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
+import diana.Diana
 import diana.config.categories.CategoryGeneral
 import diana.config.json.Exclude
-import diana.utils.Utils
+import net.minecraft.client.settings.GameSettings
+import net.minecraft.client.settings.KeyBinding
+import net.minecraftforge.fml.client.registry.ClientRegistry
 import java.awt.Color
 import java.util.*
 import java.util.function.Predicate
-import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.reflect.KProperty
 
@@ -21,10 +23,11 @@ typealias ValueListener<T> = (T) -> T
 
 open class Value<T : Any>(
     @SerializedName("name") open val name: String,
+    /** Do not set internal 'value' directly **/
     @SerializedName("value") internal var value: T,
     @Exclude val valueType: ValueType,
     @Exclude internal var visibility: Visibility = Visibility.VISIBLE,
-    @Exclude internal val default: T = value
+    @Exclude internal val default: T = value,
 ) {
     @Exclude
     var doNotInclude = false
@@ -130,7 +133,7 @@ open class Value<T : Any>(
 }
 
 enum class ValueType {
-    ACTION, BOOLEAN, CATEGORY, FLOAT, INT, TEXT, COLOR, CHOICE, CHOOSE, MULTI_CHOOSE, UNKNOWN
+    ACTION, BOOLEAN, CATEGORY, FLOAT, INT, KEYBINDING, TEXT, COLOR, CHOICE, CHOOSE, MULTI_CHOOSE, UNKNOWN
 }
 
 enum class Visibility {
@@ -138,7 +141,7 @@ enum class Visibility {
 }
 
 class RangedValue<T : Any>(
-    name: String, value: T, @Exclude val range: ClosedRange<*>, type: ValueType
+    name: String, value: T, @Exclude val range: ClosedRange<*>, type: ValueType,
 ) : Value<T>(name, value, type) {
 
     fun getFrom(): Double {
@@ -158,16 +161,56 @@ class RangedValue<T : Any>(
 typealias Action = () -> Unit
 
 class ActionValue<T : Action>(
-    name: String, value: T
+    name: String, value: T,
 ) : Value<T>(name, value, ValueType.ACTION) {
     init {
         doNotInclude()
     }
 }
 
+class KeyBindingValue(
+    /** The name must be unique for the mod, not just the category **/
+    name: String,
+    value: Int,
+) : Value<Int>(name, value, ValueType.KEYBINDING) {
+    internal val mcKeyBinding = DianaKeyBinding(name, value, Diana.modName) { i -> onMCSetKeyBinding(i) }
+    val keyName: String
+        get() = GameSettings.getKeyDisplayString(value)
+
+    override fun set(t: Int): Boolean {
+        if (super.set(t)) {
+            mcKeyBinding.keyCode = t
+            KeyBinding.resetKeyBindingArrayAndHash()
+            Diana.mc.gameSettings.saveOptions()
+            return true
+        }
+        return false
+    }
+
+    private fun onMCSetKeyBinding(keyCode: Int) {
+        super.set(keyCode)
+    }
+
+    init {
+        ClientRegistry.registerKeyBinding(mcKeyBinding)
+    }
+}
+
+class DianaKeyBinding(
+    name: String,
+    keyCode: Int,
+    category: String,
+    val callback: (Int) -> Unit,
+) : KeyBinding(name, keyCode, category) {
+    override fun setKeyCode(keyCode: Int) {
+        super.setKeyCode(keyCode)
+        callback(keyCode)
+    }
+}
+
 
 class ChooseListValue<T: NamedChoice>(
-    name: String, value: T, @Exclude val choices: Array<T>
+    name: String, value: T, @Exclude val choices: Array<T>,
 ) : Value<T>(name, value, ValueType.CHOOSE) {
     override fun deserializeFrom(gson: Gson, element: JsonElement) {
         val name = element.asString
@@ -181,7 +224,7 @@ class ChooseListValue<T: NamedChoice>(
 }
 
 class MultiChooseListValue<T: NamedChoice>(
-    name: String, value: MultiChooseList<T>, @Exclude val choices: MultiChooseList<T>
+    name: String, value: MultiChooseList<T>, @Exclude val choices: MultiChooseList<T>,
 ) : Value<MultiChooseList<T>>(name, value, ValueType.MULTI_CHOOSE) {
     init {
         value.listListeners = { u -> runListeners(u) }

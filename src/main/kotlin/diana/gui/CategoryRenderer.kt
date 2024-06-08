@@ -115,6 +115,9 @@ open class CategoryRenderer(
 
     open fun onInit() {
         scroll = scroll
+        for (value in values) {
+            value.onInit()
+        }
     }
 
     open fun onConfigReload() {

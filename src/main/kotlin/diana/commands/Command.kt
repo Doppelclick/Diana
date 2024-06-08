@@ -233,7 +233,11 @@ class Command : CommandBase() {
                     }
 
                     "printdata" -> {
-                        modMessage("${Burrows.guessPos} \n${Burrows.interceptPos}")
+                        println("${Burrows.guessPos} \n${Burrows.interceptPos}\n" +
+                                "p: ${Burrows.particles}\n" +
+                                "op: ${Burrows.oldParticles}\n" +
+                                "s: ${Burrows.sounds}\n" +
+                                "a: ${Burrows.arrowStart} ad: ${Burrows.arrowDir}")
                     }
 
                     "restartserver" -> {

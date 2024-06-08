@@ -39,6 +39,11 @@ open class Category(
     protected fun color(name: String, default: Color) =
         value(name, default, ValueType.COLOR)
 
+
+    /** The KeyBinding name must be unique for the mod, not just the category **/
+    protected fun keyBinding(name: String, default: Int) =
+        KeyBindingValue(name, default).apply { this@Category.value.add(this) }
+
     protected fun action(name: String, action: () -> Unit) =
         ActionValue(name, action).apply { this@Category.value.add(this) }
 

@@ -112,6 +112,8 @@ open class ValueRenderer(
         inputting = false
     }
 
+    open fun onInit() {}
+
     open fun onConfigReload() {}
 
     // yPos + CategoryRenderer.BUTTON_HEIGHT >= 0 && yPos < parentCategory.tabHeight
@@ -135,6 +137,7 @@ open class ValueRenderer(
                 ValueType.FLOAT -> FloatRenderer(this as RangedValue<Float>)
                 ValueType.TEXT -> TextRenderer(this as Value<String>)
                 ValueType.COLOR -> ColorRenderer(this as Value<Color>)
+                ValueType.KEYBINDING -> KeyBindingRenderer(this as KeyBindingValue)
                 ValueType.ACTION -> ActionRenderer(this as ActionValue<Action>)
                 ValueType.CHOOSE, ValueType.MULTI_CHOOSE -> ChoiceRenderer(this)
                 else -> {
